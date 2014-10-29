@@ -1,30 +1,32 @@
-const int buttonPin = 1;     // Digital pushbutton pin
+#include <sstream>
+
+const int buttonPin = 2;     // Digital pushbutton pin
 const int ledPin =  13;      // the number of the LED pin
+const int potentiometerPin = A0;
 
 // variables will change:
 int buttonState = 0;         // variable for reading the pushbutton status
-int potentiometerValue = 0;
+int potentiometerValue;
 
 void setup() {
-  
    // init serial communication for potentiometer at 9600 bits per second
    Serial.begin(9600);
   
   // init led output for button
   pinMode(ledPin, OUTPUT);     
-  // init led input for button 
+
   pinMode(buttonPin, INPUT);     
+
 }
 
 void loop(){
-  readPotentiometerSensorValue()
+  readPotentiometerSensorValue();
   readButtonValue();
   printValues();
 }
 
 void readPotentiometerSensorValue() {
-      potentiometerValue = analogRead(A0);
-  delay(1); 
+  potentiometerValue = analogRead(potentiometerPin);
 }
 
 void readButtonValue() {
@@ -43,7 +45,7 @@ void readButtonValue() {
 }
 
 void printValues() {
-  Serial.println("potentiometer value: " + sensorValue);
+  Serial.println(potentiometerValue);
 }
 
 int getPotentiometerValue() {
