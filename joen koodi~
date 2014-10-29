@@ -1,0 +1,6 @@
+
+ofVideoPlayer videoPlayer;
+
+videoPlayer.loadMovie("Girl.avi");
+
+videoPlayer.play();
