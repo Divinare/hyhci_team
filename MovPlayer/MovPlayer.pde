@@ -34,6 +34,7 @@ void movieEvent(Movie movie) {
 void draw() {
   if (framesBeforeGettingButtonState == 0) {
     readButtonState();  
+    framesBeforeGettingButtonState = 5;
   }
   else {
     framesBeforeGettingButtonState--; 
@@ -42,7 +43,15 @@ void draw() {
   readValues();
   image(mov, 0, 0);
  
-  mov.speed(playbackSpeed);
+ 
+  if ( playbackSpeed < 0.5 || playbackSpeed > 1.3 ) {
+    mov.speed(playbackSpeed);  
+    mov.volume(0);
+  }
+  else {
+    mov.speed(1); //Normal speed
+    mov.volume(1); //Normal volume 
+  }
   
   if (buttonState) {
     mov.pause();
@@ -56,7 +65,7 @@ void draw() {
   }
   
   fill(255);
-  text("TITLE: " + mov.filename + "\n SPEED: " + nfc(playbackSpeed, 2) + "X" + "\n Pressure reading: " + arduino.analogRead(3), 10, 30);
+  text("TITLE: " + mov.filename + "\n SPEED: " + nfc(playbackSpeed, 2) + "X" + "\n Pressure reading: " + pressureRating, 10, 30);
   
 }  
 
