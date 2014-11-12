@@ -1,6 +1,5 @@
 import org.firmata.*;
 import cc.arduino.*;
-
 import processing.video.*;
 import processing.serial.*;
 
@@ -10,18 +9,17 @@ int pressureRating;
 boolean buttonState = false; //true for pressed down
 float playbackSpeed;
 int framesBeforeGettingButtonState = 5; //So that we avoid reading the button state every frame
+int IRLed = 9;
+String[] videos;
 
 void setup() {
   size(636, 360);
+  background(0);
+  
   arduino = new Arduino(this, Arduino.list()[0], 57600);
   
-  for (int i = 0; i <= 53; i++)
-    arduino.pinMode(i, Arduino.INPUT);
-
-  //IR Led  
-  arduino.pinMode(9, arduino.OUTPUT);
+  initializePins(); //Set Arduino pins on INPUT, except IR Led Pin is marked as OUTPUT
   
-  background(0);
   mov = new Movie(this, "girlAVI.mov");
   mov.loop(); 
   frame.setResizable(true);
@@ -69,7 +67,15 @@ void draw() {
   fill(255);
   text("TITLE: " + mov.filename + "\n SPEED: " + nfc(playbackSpeed, 2) + "X" + "\n Pressure reading: " + pressureRating, 10, 30);
   
-}  
+}
+
+void initializePins() {
+  for (int i = 0; i <= 53; i++)
+  arduino.pinMode(i, Arduino.INPUT);
+
+  //IR Led  
+  arduino.pinMode(IRLed, arduino.OUTPUT);  
+}
 
 void readValues() {
  pressureRating = arduino.analogRead(3);
