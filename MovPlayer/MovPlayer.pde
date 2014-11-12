@@ -24,6 +24,7 @@ void setup() {
   background(0);
   mov = new Movie(this, "girlAVI.mov");
   mov.loop(); 
+  frame.setResizable(true);
 }
 
 void movieEvent(Movie movie) {
@@ -32,6 +33,7 @@ void movieEvent(Movie movie) {
 }
 
 void draw() {
+  frame.setSize(mov.width, mov.height);
   if (framesBeforeGettingButtonState == 0) {
     readButtonState();  
     framesBeforeGettingButtonState = 5;
