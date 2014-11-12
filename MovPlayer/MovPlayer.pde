@@ -22,7 +22,7 @@ void setup() {
   arduino.pinMode(9, arduino.OUTPUT);
   
   background(0);
-  mov = new Movie(this, "girlAVI.mov");
+  mov = new Movie(this, "otter.mov");
   mov.loop(); 
 }
 
