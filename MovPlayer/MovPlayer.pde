@@ -2,7 +2,6 @@ import org.firmata.*;
 import cc.arduino.*;
 import processing.video.*;
 import processing.serial.*;
-import java.io.*;
 
 Movie mov;
 Arduino arduino;
@@ -11,17 +10,24 @@ boolean buttonState = false; //true for pressed down
 float playbackSpeed;
 int framesBeforeGettingButtonState = 5; //So that we avoid reading the button state every frame
 int IRLed = 9;
-File[] videos;
+int threeWayDown = 3;
+int threeWayIn = 4;
+int threeWayUp = 5;
+long threeWayInPressed = 10000;
+long skipVideosChanged = System.currentTimeMillis();
+float volume = 0.5;
+String[] videos;
+boolean skipVideos = false; 
 
 void setup() {
   size(636, 360);
   background(0);
   
   arduino = new Arduino(this, Arduino.list()[0], 57600);
+  
   initializePins(); //Set Arduino pins on INPUT, except IR Led Pin is marked as OUTPUT
   
-  getVideoList();
-  
+  background(0);
   mov = new Movie(this, "otter.mov");
   mov.loop(); 
   frame.setResizable(true);
@@ -45,15 +51,17 @@ void draw() {
   readValues();
   image(mov, 0, 0);
  
- 
+   mov.volume(volume);
   if ( playbackSpeed < 0.5 || playbackSpeed > 1.3 ) {
     mov.speed(playbackSpeed);  
-    mov.volume(0);
+   // mov.volume(0);
   }
   else {
     mov.speed(1); //Normal speed
-    mov.volume(1); //Normal volume 
+   // mov.volume(1); //Normal volume 
   }
+  handleVolumeAndSkip();
+
   
   if (buttonState) {
     mov.pause();
@@ -97,11 +105,63 @@ void readButtonState() {
  }
 }
 
-void getVideoList() {
- File dir = new File("./data");
- videos = dir.listFiles(new FileFilter() {
-  public boolean accept(File video) {
-   return video.getName().endsWith(".mov");
-  } 
- }); 
+void handleVolumeAndSkip() {
+  
+  // If over 5 seconds has passed from pressing threeWayIn button, set skipVideos false
+  if(skipVideos && skipVideosChanged + 5000 < System.currentTimeMillis()) {
+     skipVideos = false; 
+  }
+  
+  boolean skipChangeAllowed = true;
+  // to prevent user from holding down threeWayIn button
+  if (skipVideosChanged + 250 > System.currentTimeMillis()) {
+     skipChangeAllowed = false;
+  }
+  if (arduino.digitalRead(threeWayIn) == arduino.LOW && skipVideos) {
+    if(skipChangeAllowed) {
+        skipVideos = false;
+    }
+     skipVideosChanged = System.currentTimeMillis();
+  }
+  else if (arduino.digitalRead(threeWayIn) == arduino.LOW) {
+    if(skipChangeAllowed) {
+        skipVideos = true;
+    }
+    skipVideosChanged = System.currentTimeMillis();
+  }
+  
+   if (skipVideos) {
+     handleSkip();
+   } else {
+      handleVolume(); 
+   }
+ 
+  if (arduino.digitalRead(threeWayIn) == arduino.LOW) {
+        threeWayInPressed = System.currentTimeMillis();
+  }
 }
+
+void handleSkip() {
+  text("Skipping video ", 10, 90);
+}
+
+void handleVolume() {
+   text("Volume " + volume, 10, 70);
+   if (arduino.digitalRead(threeWayDown) == arduino.LOW) {
+      if (volume+0.01 < 1) {
+          volume += 0.01;
+          
+      } else {
+         volume = 1; 
+      }
+      
+  }
+  if (arduino.digitalRead(threeWayUp) == arduino.LOW) {
+      if (volume-0.01 > 0) {
+          volume -= 0.01;
+      } else {
+          volume = 0; 
+      }
+   } 
+}
+
