@@ -20,7 +20,8 @@ void setup() {
   
   initializePins(); //Set Arduino pins on INPUT, except IR Led Pin is marked as OUTPUT
   
-  mov = new Movie(this, "girlAVI.mov");
+  background(0);
+  mov = new Movie(this, "otter.mov");
   mov.loop(); 
   frame.setResizable(true);
 }
