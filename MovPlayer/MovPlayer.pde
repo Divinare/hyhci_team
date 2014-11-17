@@ -2,8 +2,11 @@ import org.firmata.*;
 import cc.arduino.*;
 import processing.video.*;
 import processing.serial.*;
+import java.io.*;
+import java.lang.System;
 
 Movie mov;
+Movie[] movieObjects;
 Arduino arduino;
 int pressureRating;
 boolean buttonState = false; //true for pressed down
@@ -17,68 +20,95 @@ long threeWayInPressed = 10000;
 long skipVideosChanged = 0;
 float volume = 0.5;
 long volumeChanged = 0;
-String[] videos;
-boolean skipVideos = false; 
+boolean skipVideos = false;
+boolean bootstrap = true; //Are we just selecting the video to play
 
 void setup() {
-  size(636, 360);
+  size(displayWidth, displayHeight);
   background(0);
+  
+  File dir = new File(System.getProperty("user.dir" + "/data");
+  File[] videos = dir.listFiles(new FileFilter() {
+   public boolean accept(File video) {
+    return video.getName().endsWith(".mov");
+   } 
+  });
+  
+  movieObjects = new Movie[videos.length];
+  for (int i=0; i < videos.length; i++) {
+   movieObjects[i] = new Movie(this, videos[i].getAbsolutePath());
+   movieObjects[i].play();
+   movieObjects[i].jump(3);
+   movieObjects[i].pause();
+  } 
   
   arduino = new Arduino(this, Arduino.list()[0], 57600);
-  
-  initializePins(); //Set Arduino pins on INPUT, except IR Led Pin is marked as OUTPUT
-  
-  background(0);
-  mov = new Movie(this, "otter.mov");
-  mov.loop(); 
+  initializePins(); //Set Arduino pins on INPUT, except IR Led Pin is marked as OUTPUT 
   frame.setResizable(true);
 }
 
+void mousePressed() {
+ if (bootstrap) {
+  float startX = mouseX;
+  int selectedMovie = (int)map(startX, 0, width, 0, movieObjects.length);
+  bootstrap = false; 
+  mov = new Movie(this, movieObjects[selectedMovie].filename); 
+  mov.loop();
+ } 
+}
+
 void movieEvent(Movie movie) {
-  mov.read(); 
-  
+  mov.read();   
 }
 
 void draw() {
-  frame.setSize(mov.width, mov.height);
-  if (framesBeforeGettingButtonState == 0) {
-    readButtonState();  
-    framesBeforeGettingButtonState = 5;
+  if (bootstrap) {
+   int usedWidth = 0;
+   for (int i=0; i < movieObjects.length; i++) {
+    image(movieObjects[i], usedWidth, height/2, width/movieObjects.length, height/movieObjects.length);
+    usedWidth += width/movieObjects.length;
+   } 
   }
   else {
-    framesBeforeGettingButtonState--; 
-  }
+   frame.setSize(mov.width, mov.height);
+   if (framesBeforeGettingButtonState == 0) {
+     readButtonState();  
+     framesBeforeGettingButtonState = 5;
+   }
+   else {
+     framesBeforeGettingButtonState--; 
+   }
   
-  readValues();
-  image(mov, 0, 0);
+   readValues();
+   image(mov, 0, 0);
  
-   mov.volume(volume);
-  if ( playbackSpeed < 0.5 || playbackSpeed > 1.3 ) {
-    mov.speed(playbackSpeed);  
-   // mov.volume(0);
-  }
-  else {
-    mov.speed(1); //Normal speed
-   // mov.volume(1); //Normal volume 
-  }
-  handleVolumeAndSkip();
+    mov.volume(volume);
+   if ( playbackSpeed < 0.5 || playbackSpeed > 1.3 ) {
+     mov.speed(playbackSpeed);  
+    // mov.volume(0);
+   }
+   else {
+     mov.speed(1); //Normal speed
+    // mov.volume(1); //Normal volume 
+   }
+   handleVolumeAndSkip();
 
   
-  if (buttonState) {
-    mov.pause();
-  }
-  else { 
-    mov.play();
-  }
+   if (buttonState) {
+     mov.pause();
+   }
+   else { 
+     mov.play();
+   }
   
-  if (pressureRating > 500 ) {
-    arduino.digitalWrite(9, arduino.HIGH);
-  }
+   if (pressureRating > 500 ) {
+     arduino.digitalWrite(9, arduino.HIGH);
+   }
   
-  fill(255);
+   fill(255);
 
-  printVideoInfo();
-
+   printVideoInfo();
+  }
 }
 
 void printVideoInfo() {
