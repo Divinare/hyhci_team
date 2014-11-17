@@ -51,17 +51,10 @@ void draw() {
   
   readValues();
   image(mov, 0, 0);
- 
-   mov.volume(volume);
-  if ( playbackSpeed < 0.5 || playbackSpeed > 1.3 ) {
-    mov.speed(playbackSpeed);  
-   // mov.volume(0);
-  }
-  else {
-    mov.speed(1); //Normal speed
-   // mov.volume(1); //Normal volume 
-  }
-  handleVolumeAndSkip();
+   
+   muteBasedOnPlaybackSpeed(0.5, 1.3);
+   
+   handleVolumeAndSkip();
 
   
   if (buttonState) {
@@ -91,6 +84,7 @@ void printVideoInfo() {
     if (skipVideos) {
         text("Skipping video (not implemented yet)", 10, 90);
     }
+    text("print coords here, x: y: ", 10, 110);
 }
 
 void initializePins() {
@@ -118,7 +112,16 @@ void readButtonState() {
   }
  }
 }
-
+void muteBasedOnPlaybackSpeed(float downLimit, float upLimit) {
+  if ( playbackSpeed < downLimit || playbackSpeed > upLimit ) {
+     mov.speed(playbackSpeed);  
+     mov.volume(0);
+  }
+  else {
+     mov.speed(1); //Normal speed
+     mov.volume(volume); // Normal volume
+  }
+}
 void handleVolumeAndSkip() {
   
   // If over 5 seconds has passed from pressing threeWayIn button, set skipVideos false
