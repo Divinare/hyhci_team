@@ -52,6 +52,7 @@ void initializeVideoLibrary() {
    movieObjects[i].play();
    movieObjects[i].volume(0);
    movieObjects[i].jump(3);
+   movieObjects[i].volume(volume);
    movieObjects[i].pause();
   }
   
@@ -67,7 +68,7 @@ void mousePressed() {
 }
 
 void movieEvent(Movie movie) {
-  mov.read();   
+  movie.read();   
 }
 
 void draw() {
@@ -91,7 +92,7 @@ void draw() {
    readValues();
    image(mov, 0, 0);
  
-    mov.volume(volume);
+   mov.volume(volume);
    if ( playbackSpeed < 0.5 || playbackSpeed > 1.3 ) {
      mov.speed(playbackSpeed);  
     // mov.volume(0);
