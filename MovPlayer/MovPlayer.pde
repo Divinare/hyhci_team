@@ -27,7 +27,19 @@ void setup() {
   size(displayWidth, displayHeight);
   background(0);
   
-  File dir = new File(System.getProperty("user.dir" + "/data");
+  initializeVideoLibrary();
+  
+  arduino = new Arduino(this, Arduino.list()[0], 57600);
+  initializePins(); //Set Arduino pins on INPUT, except IR Led Pin is marked as OUTPUT 
+  frame.setResizable(true);
+}
+
+/*
+* Get all the video files in sketch data folder, get a frame at 3 seconds from video start
+*/
+void initializeVideoLibrary() {
+  
+  File dir = new File(dataPath(""));
   File[] videos = dir.listFiles(new FileFilter() {
    public boolean accept(File video) {
     return video.getName().endsWith(".mov");
@@ -40,11 +52,8 @@ void setup() {
    movieObjects[i].play();
    movieObjects[i].jump(3);
    movieObjects[i].pause();
-  } 
+  }
   
-  arduino = new Arduino(this, Arduino.list()[0], 57600);
-  initializePins(); //Set Arduino pins on INPUT, except IR Led Pin is marked as OUTPUT 
-  frame.setResizable(true);
 }
 
 void mousePressed() {
