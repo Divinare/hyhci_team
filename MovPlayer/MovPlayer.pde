@@ -14,8 +14,9 @@ int threeWayDown = 3;
 int threeWayIn = 4;
 int threeWayUp = 5;
 long threeWayInPressed = 10000;
-long skipVideosChanged = System.currentTimeMillis();
+long skipVideosChanged = 0;
 float volume = 0.5;
+long volumeChanged = 0;
 String[] videos;
 boolean skipVideos = false; 
 
@@ -75,8 +76,21 @@ void draw() {
   }
   
   fill(255);
+
+  printVideoInfo();
+
+}
+
+void printVideoInfo() {
   text("TITLE: " + mov.filename + "\n SPEED: " + nfc(playbackSpeed, 2) + "X" + "\n Pressure reading: " + pressureRating, 10, 30);
-  
+    
+    if (volumeChanged + 2000 > System.currentTimeMillis()) {
+        text("Volume " + volume, 10, 70);
+    }
+    
+    if (skipVideos) {
+        text("Skipping video (not implemented yet)", 10, 90);
+    }
 }
 
 void initializePins() {
@@ -142,12 +156,13 @@ void handleVolumeAndSkip() {
 }
 
 void handleSkip() {
-  text("Skipping video ", 10, 90);
+    // to be implemented
 }
 
 void handleVolume() {
-   text("Volume " + volume, 10, 70);
+  
    if (arduino.digitalRead(threeWayDown) == arduino.LOW) {
+      volumeChanged = System.currentTimeMillis();
       if (volume+0.01 < 1) {
           volume += 0.01;
           
@@ -157,6 +172,7 @@ void handleVolume() {
       
   }
   if (arduino.digitalRead(threeWayUp) == arduino.LOW) {
+      volumeChanged = System.currentTimeMillis();
       if (volume-0.01 > 0) {
           volume -= 0.01;
       } else {
