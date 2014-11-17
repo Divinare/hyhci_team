@@ -3,7 +3,6 @@ import cc.arduino.*;
 import processing.video.*;
 import processing.serial.*;
 import java.io.*;
-import java.lang.System;
 
 Movie mov;
 Movie[] movieObjects;
@@ -21,7 +20,7 @@ long skipVideosChanged = 0;
 float volume = 0.5;
 long volumeChanged = 0;
 boolean skipVideos = false;
-boolean bootstrap = true; //Are we just selecting the video to play
+boolean bootstrap; //Are we just selecting the video to play
 
 void setup() {
   size(displayWidth, displayHeight);
@@ -39,6 +38,7 @@ void setup() {
 */
 void initializeVideoLibrary() {
   
+  bootstrap = true;
   File dir = new File(dataPath(""));
   File[] videos = dir.listFiles(new FileFilter() {
    public boolean accept(File video) {
@@ -50,7 +50,9 @@ void initializeVideoLibrary() {
   for (int i=0; i < videos.length; i++) {
    movieObjects[i] = new Movie(this, videos[i].getAbsolutePath());
    movieObjects[i].play();
+   movieObjects[i].volume(0);
    movieObjects[i].jump(3);
+   movieObjects[i].volume(volume);
    movieObjects[i].pause();
   }
   
@@ -58,8 +60,7 @@ void initializeVideoLibrary() {
 
 void mousePressed() {
  if (bootstrap) {
-  float startX = mouseX;
-  int selectedMovie = (int)map(startX, 0, width, 0, movieObjects.length);
+  int selectedMovie = (int)map(mouseX, 0, width, 0, movieObjects.length);
   bootstrap = false; 
   mov = new Movie(this, movieObjects[selectedMovie].filename); 
   mov.loop();
@@ -67,7 +68,7 @@ void mousePressed() {
 }
 
 void movieEvent(Movie movie) {
-  mov.read();   
+  movie.read();   
 }
 
 void draw() {
