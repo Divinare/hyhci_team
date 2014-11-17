@@ -2,6 +2,7 @@ import org.firmata.*;
 import cc.arduino.*;
 import processing.video.*;
 import processing.serial.*;
+import java.io.*;
 
 Movie mov;
 Arduino arduino;
@@ -10,17 +11,17 @@ boolean buttonState = false; //true for pressed down
 float playbackSpeed;
 int framesBeforeGettingButtonState = 5; //So that we avoid reading the button state every frame
 int IRLed = 9;
-String[] videos;
+File[] videos;
 
 void setup() {
   size(636, 360);
   background(0);
   
   arduino = new Arduino(this, Arduino.list()[0], 57600);
-  
   initializePins(); //Set Arduino pins on INPUT, except IR Led Pin is marked as OUTPUT
   
-  background(0);
+  getVideoList();
+  
   mov = new Movie(this, "otter.mov");
   mov.loop(); 
   frame.setResizable(true);
@@ -94,4 +95,13 @@ void readButtonState() {
     buttonState = true; 
   }
  }
+}
+
+void getVideoList() {
+ File dir = new File("./data");
+ videos = dir.listFiles(new FileFilter() {
+  public boolean accept(File video) {
+   return video.getName().endsWith(".mov");
+  } 
+ }); 
 }
