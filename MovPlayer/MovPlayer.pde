@@ -85,27 +85,9 @@ void draw() {
   else {
    frame.setSize(mov.width, mov.height);
 
-   HandleInputs();
-   
-
-  readValues();
-  image(mov, 0, 0);
-   
-   muteBasedOnPlaybackSpeed(0.5, 1.3);
-
-   handleVolumeAndSkip();
-
+   HandleInputs(); 
   
-   if (buttonState) {
-     mov.pause();
-   }
-   else { 
-     mov.play();
-   }
-  
-   if (pressureRating > 500 ) {
-     arduino.digitalWrite(9, arduino.HIGH);
-   }
+   image(mov, 0, 0);
   
    fill(255);
 
@@ -114,8 +96,14 @@ void draw() {
 }
 
 void handleInputs() {
-  
- 
+
+  readValues();
+  muteBasedOnPlaybackSpeed(0.5, 1.3);
+  HandleVolumeAndSkip();
+  if (pressureRating > 500 ) {
+     arduino.digitalWrite(9, arduino.HIGH);
+   }
+   
 }
 
 void videoSelectScreen() {
