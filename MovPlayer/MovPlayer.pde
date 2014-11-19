@@ -4,23 +4,30 @@ import processing.video.*;
 import processing.serial.*;
 import java.io.*;
 
+//MOVIE PLAYING AND VIDEO SELECTION
 Movie mov;
 Movie[] movieObjects;
+int firstVideoOnSelectionIndex = 0;
+boolean videoSelect; //Are we just selecting the video to play
+//ARDUINO
 Arduino arduino;
 int pressureRating;
 boolean buttonState = false; //true for pressed down
-float playbackSpeed;
-int framesBeforeGettingButtonState = 5; //So that we avoid reading the button state every frame
+// for pausing
+long timeWhenPressed = 0;
+boolean pressed = false;
+boolean movPaused = false;
 int IRLed = 9;
 int threeWayDown = 3;
 int threeWayIn = 4;
 int threeWayUp = 5;
 long threeWayInPressed = 10000;
-long skipVideosChanged = 0;
+//VIDEO PLAYBACK
+float playbackSpeed;
 float volume = 0.5;
+long skipVideosChanged = 0;
 long volumeChanged = 0;
 boolean skipVideos = false;
-boolean videoSelect; //Are we just selecting the video to play
 
 void setup() {
   size(displayWidth, displayHeight);
@@ -60,7 +67,7 @@ void initializeVideoLibrary() {
 
 void mousePressed() {
  if (videoSelect) {
-  int selectedMovie = (int)map(mouseX, 0, width, 0, movieObjects.length);
+  int selectedMovie = firstVideoOnSelectionIndex + (int)map(mouseX, 0, width, 0, 4);
   videoSelect = false; 
   mov = new Movie(this, movieObjects[selectedMovie].filename); 
   mov.loop();
@@ -71,6 +78,22 @@ void mousePressed() {
   mov.stop();
   frame.setSize(displayWidth, displayHeight);
   videoSelectScreen(); 
+ }
+}
+
+void keyPressed() {
+ if (key == 'n') {
+  if (firstVideoOnSelectionIndex+5 < movieObjects.length) {
+   firstVideoOnSelectionIndex += 5; 
+  }
+  drawMovieSelectScreen();
+ } 
+ if (key == 'p') {
+  firstVideoOnSelectionIndex -= 5;
+  if (firstVideoOnSelectionIndex < 0) {
+   firstVideoOnSelectionIndex = 0; 
+  }
+  drawMovieSelectScreen(); 
  }
 }
 
@@ -97,14 +120,16 @@ void draw() {
 
 void handleInputs() {
 
+
+   handlePause();
+   
   readValues();
   changePlaybackSpeed();
   handleVolumeAndSkip();
-  if (pressureRating > 500 ) {
-     arduino.digitalWrite(9, arduino.HIGH);
-   }
-   
+
 }
+   
+
 
 void changePlaybackSpeed() {
   double speedDownLimit = 0.5;
@@ -120,14 +145,20 @@ void changePlaybackSpeed() {
 }
 
 void videoSelectScreen() {
- int usedWidth = 0;
- for (int i=0; i < movieObjects.length; i++) {
-  String[] file = splitTokens(movieObjects[i].filename, System.getProperty("file.separator"));
-  String title = file[file.length-1];
+ int usedWidth = 10;
+ int maxNumberOfVideosOnScreen = 5;
+ background(0);
+ 
+ for (int i=firstVideoOnSelectionIndex; i < firstVideoOnSelectionIndex + maxNumberOfVideosOnScreen; i++) {
+  if (i >= movieObjects.length) {
+   break; 
+  }
+  String[] videoname = splitTokens(movieObjects[i].filename, System.getProperty("file.separator"));
+  String title = videoname[videoname.length-1];
   image(movieObjects[i], usedWidth, height/2, width/5, height/5);
   text(title, usedWidth, height/2 + height/3);
-  usedWidth += width/movieObjects.length;
- } 
+  usedWidth += movieObjects[i].width; 
+ }
 }
 
 void printVideoInfo() {
@@ -141,6 +172,7 @@ void printVideoInfo() {
         text("Skipping video (not implemented yet)", 10, 90);
     }
     text("print coords here, x: y: ", 10, 110);
+    text("video paused " + movPaused, 10, 130);
 }
 
 void initializePins() {
@@ -156,17 +188,16 @@ void readValues() {
  playbackSpeed = map(arduino.analogRead(0), 0, 1023, 0.1, 3);  
 }
 
-void readButtonState() { 
- if (arduino.digitalRead(7) == arduino.HIGH) {
-  if (buttonState) {
-    buttonState = false;
+void muteBasedOnPlaybackSpeed(float downLimit, float upLimit) {
+  if ( playbackSpeed < downLimit || playbackSpeed > upLimit ) {
+     mov.speed(playbackSpeed);  
+     mov.volume(0);
   }
   else {
-    buttonState = true; 
+     mov.speed(1); //Normal speed
+     mov.volume(volume); // Normal volume
   }
- }
 }
-
 void handleVolumeAndSkip() {
   
   // If over 5 seconds has passed from pressing threeWayIn button, set skipVideos false
@@ -248,5 +279,37 @@ void handleVolume() {
           volume = 0; 
       }
    } 
+}
+
+void handlePause() {
+  
+  if (pressureRating >= 800 && pressed == false) {
+       pressed = true;
+       boolean saveMovPaused = movPaused;
+       if(timeWhenPressed + 1000 > System.currentTimeMillis()) {
+            if(movPaused) {
+                movPaused = false;
+            } else {
+                movPaused = true;
+            }
+       }
+       if (saveMovPaused != movPaused) {
+           // to get pause changed with 2 click
+           timeWhenPressed = 0;
+       } else {
+           // video didnt pause with pressing, save last time when pressed
+           timeWhenPressed = System.currentTimeMillis();
+       }
+  }
+  if (pressureRating <= 200 && pressed) {
+      pressed = false;
+  }
+  
+  if (movPaused) {
+     mov.pause();
+  } else { 
+     mov.play();
+  }
+   
 }
 
