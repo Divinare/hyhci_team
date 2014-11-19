@@ -4,23 +4,26 @@ import processing.video.*;
 import processing.serial.*;
 import java.io.*;
 
+//MOVIE PLAYING AND VIDEO SELECTION
 Movie mov;
 Movie[] movieObjects;
+int firstVideoOnSelectionIndex = 0;
+boolean videoSelect; //Are we just selecting the video to play
+//ARDUINO
 Arduino arduino;
 int pressureRating;
 boolean buttonState = false; //true for pressed down
-float playbackSpeed;
-int framesBeforeGettingButtonState = 5; //So that we avoid reading the button state every frame
 int IRLed = 9;
 int threeWayDown = 3;
 int threeWayIn = 4;
 int threeWayUp = 5;
 long threeWayInPressed = 10000;
-long skipVideosChanged = 0;
+//VIDEO PLAYBACK
+float playbackSpeed;
 float volume = 0.5;
+long skipVideosChanged = 0;
 long volumeChanged = 0;
 boolean skipVideos = false;
-boolean videoSelect; //Are we just selecting the video to play
 
 void setup() {
   size(displayWidth, displayHeight);
@@ -60,7 +63,7 @@ void initializeVideoLibrary() {
 
 void mousePressed() {
  if (videoSelect) {
-  int selectedMovie = (int)map(mouseX, 0, width, 0, movieObjects.length);
+  int selectedMovie = firstVideoOnSelectionIndex + (int)map(mouseX, 0, width, 0, 4);
   videoSelect = false; 
   mov = new Movie(this, movieObjects[selectedMovie].filename); 
   mov.loop();
@@ -71,6 +74,22 @@ void mousePressed() {
   mov.stop();
   frame.setSize(displayWidth, displayHeight);
   videoSelectScreen(); 
+ }
+}
+
+void keyPressed() {
+ if (key == 'n') {
+  if (firstVideoOnSelectionIndex+5 < movieObjects.length) {
+   firstVideoOnSelectionIndex += 5; 
+  }
+  drawMovieSelectScreen();
+ } 
+ if (key == 'p') {
+  firstVideoOnSelectionIndex -= 5;
+  if (firstVideoOnSelectionIndex < 0) {
+   firstVideoOnSelectionIndex = 0; 
+  }
+  drawMovieSelectScreen(); 
  }
 }
 
@@ -120,14 +139,20 @@ void changePlaybackSpeed() {
 }
 
 void videoSelectScreen() {
- int usedWidth = 0;
- for (int i=0; i < movieObjects.length; i++) {
-  String[] file = splitTokens(movieObjects[i].filename, System.getProperty("file.separator"));
-  String title = file[file.length-1];
+ int usedWidth = 10;
+ int maxNumberOfVideosOnScreen = 5;
+ background(0);
+ 
+ for (int i=firstVideoOnSelectionIndex; i < firstVideoOnSelectionIndex + maxNumberOfVideosOnScreen; i++) {
+  if (i >= movieObjects.length) {
+   break; 
+  }
+  String[] videoname = splitTokens(movieObjects[i].filename, System.getProperty("file.separator"));
+  String title = videoname[videoname.length-1];
   image(movieObjects[i], usedWidth, height/2, width/5, height/5);
   text(title, usedWidth, height/2 + height/3);
-  usedWidth += width/movieObjects.length;
- } 
+  usedWidth += movieObjects[i].width; 
+ }
 }
 
 void printVideoInfo() {
@@ -205,8 +230,6 @@ void handleVolumeAndSkip() {
 
 void handleSkip() {
     // to be implemented
-    //bootstrap = true;
-    //text("lol", 100, 100);
 }
 
 void handleVolume() {
