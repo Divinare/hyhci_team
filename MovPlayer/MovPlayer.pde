@@ -84,14 +84,9 @@ void draw() {
   }
   else {
    frame.setSize(mov.width, mov.height);
-   if (framesBeforeGettingButtonState == 0) {
-     readButtonState();  
-     framesBeforeGettingButtonState = 5;
-   }
-   else {
-     framesBeforeGettingButtonState--; 
-   }
-  
+
+   HandleInputs();
+   
 
   readValues();
   image(mov, 0, 0);
@@ -116,6 +111,11 @@ void draw() {
 
    printVideoInfo();
   }
+}
+
+void handleInputs() {
+  
+ 
 }
 
 void videoSelectScreen() {
