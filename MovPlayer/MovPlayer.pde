@@ -20,7 +20,7 @@ long skipVideosChanged = 0;
 float volume = 0.5;
 long volumeChanged = 0;
 boolean skipVideos = false;
-boolean bootstrap; //Are we just selecting the video to play
+boolean videoSelect; //Are we just selecting the video to play
 
 void setup() {
   size(displayWidth, displayHeight);
@@ -38,7 +38,7 @@ void setup() {
 */
 void initializeVideoLibrary() {
   
-  bootstrap = true;
+  videoSelect = true;
   File dir = new File(dataPath(""));
   File[] videos = dir.listFiles(new FileFilter() {
    public boolean accept(File video) {
@@ -59,12 +59,19 @@ void initializeVideoLibrary() {
 }
 
 void mousePressed() {
- if (bootstrap) {
+ if (videoSelect) {
   int selectedMovie = (int)map(mouseX, 0, width, 0, movieObjects.length);
-  bootstrap = false; 
+  videoSelect = false; 
   mov = new Movie(this, movieObjects[selectedMovie].filename); 
   mov.loop();
- } 
+ }
+ else
+ {
+  videoSelect = true;
+  mov.stop();
+  frame.setSize(displayWidth, displayHeight);
+  videoSelectScreen(); 
+ }
 }
 
 void movieEvent(Movie movie) {
@@ -72,12 +79,8 @@ void movieEvent(Movie movie) {
 }
 
 void draw() {
-  if (bootstrap) {
-   int usedWidth = 0;
-   for (int i=0; i < movieObjects.length; i++) {
-    image(movieObjects[i], usedWidth, height/2, width/movieObjects.length, height/movieObjects.length);
-    usedWidth += width/movieObjects.length;
-   } 
+  if (videoSelect) {
+   videoSelectScreen(); 
   }
   else {
    frame.setSize(mov.width, mov.height);
@@ -113,6 +116,14 @@ void draw() {
 
    printVideoInfo();
   }
+}
+
+void videoSelectScreen() {
+ int usedWidth = 0;
+ for (int i=0; i < movieObjects.length; i++) {
+  image(movieObjects[i], usedWidth, height/2, width/movieObjects.length, height/movieObjects.length);
+  usedWidth += width/movieObjects.length;
+ } 
 }
 
 void printVideoInfo() {
