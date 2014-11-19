@@ -201,6 +201,8 @@ void handleVolumeAndSkip() {
 
 void handleSkip() {
     // to be implemented
+    //bootstrap = true;
+    //text("lol", 100, 100);
 }
 
 void handleVolume() {
