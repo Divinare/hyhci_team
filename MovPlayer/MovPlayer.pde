@@ -85,7 +85,7 @@ void draw() {
   else {
    frame.setSize(mov.width, mov.height);
 
-   HandleInputs(); 
+   handleInputs(); 
   
    image(mov, 0, 0);
   
@@ -99,7 +99,7 @@ void handleInputs() {
 
   readValues();
   changePlaybackSpeed();
-  HandleVolumeAndSkip();
+  handleVolumeAndSkip();
   if (pressureRating > 500 ) {
      arduino.digitalWrite(9, arduino.HIGH);
    }
@@ -122,7 +122,10 @@ void changePlaybackSpeed() {
 void videoSelectScreen() {
  int usedWidth = 0;
  for (int i=0; i < movieObjects.length; i++) {
-  image(movieObjects[i], usedWidth, height/2, width/movieObjects.length, height/movieObjects.length);
+  String[] file = splitTokens(movieObjects[i].filename, System.getProperty("file.separator"));
+  String title = file[file.length-1];
+  image(movieObjects[i], usedWidth, height/2, width/5, height/5);
+  text(title, usedWidth, height/2 + height/3);
   usedWidth += width/movieObjects.length;
  } 
 }
