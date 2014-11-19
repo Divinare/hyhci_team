@@ -13,6 +13,10 @@ boolean videoSelect; //Are we just selecting the video to play
 Arduino arduino;
 int pressureRating;
 boolean buttonState = false; //true for pressed down
+// for pausing
+long timeWhenPressed = 0;
+boolean pressed = false;
+boolean movPaused = false;
 int IRLed = 9;
 int threeWayDown = 3;
 int threeWayIn = 4;
@@ -116,14 +120,16 @@ void draw() {
 
 void handleInputs() {
 
+
+   handlePause();
+   
   readValues();
   changePlaybackSpeed();
   handleVolumeAndSkip();
-  if (pressureRating > 500 ) {
-     arduino.digitalWrite(9, arduino.HIGH);
-   }
-   
+
 }
+   
+
 
 void changePlaybackSpeed() {
   double speedDownLimit = 0.5;
@@ -166,6 +172,7 @@ void printVideoInfo() {
         text("Skipping video (not implemented yet)", 10, 90);
     }
     text("print coords here, x: y: ", 10, 110);
+    text("video paused " + movPaused, 10, 130);
 }
 
 void initializePins() {
@@ -181,17 +188,16 @@ void readValues() {
  playbackSpeed = map(arduino.analogRead(0), 0, 1023, 0.1, 3);  
 }
 
-void readButtonState() { 
- if (arduino.digitalRead(7) == arduino.HIGH) {
-  if (buttonState) {
-    buttonState = false;
+void muteBasedOnPlaybackSpeed(float downLimit, float upLimit) {
+  if ( playbackSpeed < downLimit || playbackSpeed > upLimit ) {
+     mov.speed(playbackSpeed);  
+     mov.volume(0);
   }
   else {
-    buttonState = true; 
+     mov.speed(1); //Normal speed
+     mov.volume(volume); // Normal volume
   }
- }
 }
-
 void handleVolumeAndSkip() {
   
   // If over 5 seconds has passed from pressing threeWayIn button, set skipVideos false
@@ -252,5 +258,37 @@ void handleVolume() {
           volume = 0; 
       }
    } 
+}
+
+void handlePause() {
+  
+  if (pressureRating >= 800 && pressed == false) {
+       pressed = true;
+       boolean saveMovPaused = movPaused;
+       if(timeWhenPressed + 1000 > System.currentTimeMillis()) {
+            if(movPaused) {
+                movPaused = false;
+            } else {
+                movPaused = true;
+            }
+       }
+       if (saveMovPaused != movPaused) {
+           // to get pause changed with 2 click
+           timeWhenPressed = 0;
+       } else {
+           // video didnt pause with pressing, save last time when pressed
+           timeWhenPressed = System.currentTimeMillis();
+       }
+  }
+  if (pressureRating <= 200 && pressed) {
+      pressed = false;
+  }
+  
+  if (movPaused) {
+     mov.pause();
+  } else { 
+     mov.play();
+  }
+   
 }
 
