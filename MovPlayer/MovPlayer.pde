@@ -98,12 +98,25 @@ void draw() {
 void handleInputs() {
 
   readValues();
-  muteBasedOnPlaybackSpeed(0.5, 1.3);
+  changePlaybackSpeed();
   HandleVolumeAndSkip();
   if (pressureRating > 500 ) {
      arduino.digitalWrite(9, arduino.HIGH);
    }
    
+}
+
+void changePlaybackSpeed() {
+  double speedDownLimit = 0.5;
+  double speedUpLimit = 1.3; 
+  if ( playbackSpeed < speedDownLimit || playbackSpeed > speedUpLimit ) {
+     mov.speed(playbackSpeed);  
+     mov.volume(0);
+  }
+  else {
+     mov.speed(1); //Normal speed
+     mov.volume(volume); // Normal volume
+  }
 }
 
 void videoSelectScreen() {
@@ -137,9 +150,7 @@ void initializePins() {
 
 void readValues() {
  pressureRating = arduino.analogRead(3);
- playbackSpeed = map(arduino.analogRead(0), 0, 1023, 0.1, 3);
- 
- 
+ playbackSpeed = map(arduino.analogRead(0), 0, 1023, 0.1, 3);  
 }
 
 void readButtonState() { 
@@ -152,16 +163,7 @@ void readButtonState() {
   }
  }
 }
-void muteBasedOnPlaybackSpeed(float downLimit, float upLimit) {
-  if ( playbackSpeed < downLimit || playbackSpeed > upLimit ) {
-     mov.speed(playbackSpeed);  
-     mov.volume(0);
-  }
-  else {
-     mov.speed(1); //Normal speed
-     mov.volume(volume); // Normal volume
-  }
-}
+
 void handleVolumeAndSkip() {
   
   // If over 5 seconds has passed from pressing threeWayIn button, set skipVideos false
