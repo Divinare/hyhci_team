@@ -206,26 +206,26 @@ void handleVolumeAndSkip() {
 void handleSkip() {
     // current movie is stopped and its position is saved
     float movTime = mov.time();
-    mov.stop();
-    Movie currentMov = mov;
+    ////Movie currentMov = mov;
     
     // a (new) mov is selected by the user
-    bootstrap = true;
-    mov.pause();
+    //videoSelect = true;
+    videoSelectScreen();
+    //mov.pause();
+    
     
     // if the user didn't pick a new mov, old mov is continued from its current position
-    text(mov.filename + "    " + currentMov.filename, 200, 200);
-    if (mov.filename.equals(currentMov.filename)) {
-        text("same mov selected", 200, 200);
-        mov = currentMov;
-        mov.jump(movTime);
+    //text(mov.filename + "    " + currentMov.filename, 10, 120);
+    /*if (mov.filename.equals(currentMov.filename)) {
+        //text("same mov selected", 10, 120);
+        //mov = currentMov;
+        //mov.loop();
+        //mov.jump(movTime);
+        
     }
-    
-    mov.play();
-    
-    
-    
-    //text("lol", 100, 100);
+    else {
+      currentMov = null;
+    }*/
 }
 
 void handleVolume() {
