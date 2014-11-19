@@ -86,14 +86,14 @@ void keyPressed() {
   if (firstVideoOnSelectionIndex+5 < movieObjects.length) {
    firstVideoOnSelectionIndex += 5; 
   }
-  drawMovieSelectScreen();
+  videoSelectScreen();
  } 
  if (key == 'p') {
   firstVideoOnSelectionIndex -= 5;
   if (firstVideoOnSelectionIndex < 0) {
    firstVideoOnSelectionIndex = 0; 
   }
-  drawMovieSelectScreen(); 
+  videoSelectScreen(); 
  }
 }
 
