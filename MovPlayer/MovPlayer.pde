@@ -20,7 +20,7 @@ long skipVideosChanged = 0;
 float volume = 0.5;
 long volumeChanged = 0;
 boolean skipVideos = false;
-boolean bootstrap; //Are we just selecting the video to play
+boolean videoSelect; //Are we just selecting the video to play
 
 void setup() {
   size(displayWidth, displayHeight);
@@ -38,7 +38,7 @@ void setup() {
 */
 void initializeVideoLibrary() {
   
-  bootstrap = true;
+  videoSelect = true;
   File dir = new File(dataPath(""));
   File[] videos = dir.listFiles(new FileFilter() {
    public boolean accept(File video) {
@@ -59,12 +59,19 @@ void initializeVideoLibrary() {
 }
 
 void mousePressed() {
- if (bootstrap) {
+ if (videoSelect) {
   int selectedMovie = (int)map(mouseX, 0, width, 0, movieObjects.length);
-  bootstrap = false; 
+  videoSelect = false; 
   mov = new Movie(this, movieObjects[selectedMovie].filename); 
   mov.loop();
- } 
+ }
+ else
+ {
+  videoSelect = true;
+  mov.stop();
+  frame.setSize(displayWidth, displayHeight);
+  videoSelectScreen(); 
+ }
 }
 
 void movieEvent(Movie movie) {
@@ -72,47 +79,55 @@ void movieEvent(Movie movie) {
 }
 
 void draw() {
-  if (bootstrap) {
-   int usedWidth = 0;
-   for (int i=0; i < movieObjects.length; i++) {
-    image(movieObjects[i], usedWidth, height/2, width/movieObjects.length, height/movieObjects.length);
-    usedWidth += width/movieObjects.length;
-   } 
+  if (videoSelect) {
+   videoSelectScreen(); 
   }
   else {
    frame.setSize(mov.width, mov.height);
-   if (framesBeforeGettingButtonState == 0) {
-     readButtonState();  
-     framesBeforeGettingButtonState = 5;
-   }
-   else {
-     framesBeforeGettingButtonState--; 
-   }
-  
 
-  readValues();
-  image(mov, 0, 0);
-   
-   muteBasedOnPlaybackSpeed(0.5, 1.3);
-
-   handleVolumeAndSkip();
-
+   handleInputs(); 
   
-   if (buttonState) {
-     mov.pause();
-   }
-   else { 
-     mov.play();
-   }
-  
-   if (pressureRating > 500 ) {
-     arduino.digitalWrite(9, arduino.HIGH);
-   }
+   image(mov, 0, 0);
   
    fill(255);
 
    printVideoInfo();
   }
+}
+
+void handleInputs() {
+
+  readValues();
+  changePlaybackSpeed();
+  handleVolumeAndSkip();
+  if (pressureRating > 500 ) {
+     arduino.digitalWrite(9, arduino.HIGH);
+   }
+   
+}
+
+void changePlaybackSpeed() {
+  double speedDownLimit = 0.5;
+  double speedUpLimit = 1.3; 
+  if ( playbackSpeed < speedDownLimit || playbackSpeed > speedUpLimit ) {
+     mov.speed(playbackSpeed);  
+     mov.volume(0);
+  }
+  else {
+     mov.speed(1); //Normal speed
+     mov.volume(volume); // Normal volume
+  }
+}
+
+void videoSelectScreen() {
+ int usedWidth = 0;
+ for (int i=0; i < movieObjects.length; i++) {
+  String[] file = splitTokens(movieObjects[i].filename, System.getProperty("file.separator"));
+  String title = file[file.length-1];
+  image(movieObjects[i], usedWidth, height/2, width/5, height/5);
+  text(title, usedWidth, height/2 + height/3);
+  usedWidth += width/movieObjects.length;
+ } 
 }
 
 void printVideoInfo() {
@@ -138,9 +153,7 @@ void initializePins() {
 
 void readValues() {
  pressureRating = arduino.analogRead(3);
- playbackSpeed = map(arduino.analogRead(0), 0, 1023, 0.1, 3);
- 
- 
+ playbackSpeed = map(arduino.analogRead(0), 0, 1023, 0.1, 3);  
 }
 
 void readButtonState() { 
@@ -153,16 +166,7 @@ void readButtonState() {
   }
  }
 }
-void muteBasedOnPlaybackSpeed(float downLimit, float upLimit) {
-  if ( playbackSpeed < downLimit || playbackSpeed > upLimit ) {
-     mov.speed(playbackSpeed);  
-     mov.volume(0);
-  }
-  else {
-     mov.speed(1); //Normal speed
-     mov.volume(volume); // Normal volume
-  }
-}
+
 void handleVolumeAndSkip() {
   
   // If over 5 seconds has passed from pressing threeWayIn button, set skipVideos false
