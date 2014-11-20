@@ -352,7 +352,7 @@ void addTuioObject(TuioObject tobj) {
 // called when an object is moved
 void updateTuioObject (TuioObject tobj) {
   if (pressureOn()) {
-    playbackSpeed = map((0+(tobj.getX()-xBegin)), 0.0, 0.5, 0.1, 3);
+    playbackSpeed = map((0+(tobj.getX()-xBegin)), -0.5, 0.5, -3, 3);
     if (playbackSpeed > 3) {
       playbackSpeed = 3; 
     }
