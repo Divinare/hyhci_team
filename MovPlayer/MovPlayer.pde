@@ -3,34 +3,24 @@ import cc.arduino.*;
 import processing.video.*;
 import processing.serial.*;
 import java.io.*;
-import TUIO.*;
 
-TuioProcessing tuioClient;
-//MOVIE PLAYING AND VIDEO SELECTION
 Movie mov;
 Movie[] movieObjects;
-int firstVideoOnSelectionIndex = 0;
-boolean videoSelect; //Are we just selecting the video to play
-//ARDUINO
 Arduino arduino;
 int pressureRating;
 boolean buttonState = false; //true for pressed down
-// for pausing
-long timeWhenPressed = 0;
-boolean pressed = false;
-boolean movPaused = false;
+float playbackSpeed;
+int framesBeforeGettingButtonState = 5; //So that we avoid reading the button state every frame
 int IRLed = 9;
 int threeWayDown = 3;
 int threeWayIn = 4;
 int threeWayUp = 5;
 long threeWayInPressed = 10000;
-//VIDEO PLAYBACK
-float playbackSpeed;
-float volume = 0.5;
 long skipVideosChanged = 0;
+float volume = 0.5;
 long volumeChanged = 0;
 boolean skipVideos = false;
-float xBegin;
+boolean videoSelect; //Are we just selecting the video to play
 
 void setup() {
   size(displayWidth, displayHeight);
@@ -41,7 +31,6 @@ void setup() {
   arduino = new Arduino(this, Arduino.list()[0], 57600);
   initializePins(); //Set Arduino pins on INPUT, except IR Led Pin is marked as OUTPUT 
   frame.setResizable(true);
-  tuioClient  = new TuioProcessing(this);
 }
 
 /*
@@ -71,7 +60,7 @@ void initializeVideoLibrary() {
 
 void mousePressed() {
  if (videoSelect) {
-  int selectedMovie = firstVideoOnSelectionIndex + (int)map(mouseX, 0, width, 0, 4);
+  int selectedMovie = (int)map(mouseX, 0, width, 0, movieObjects.length);
   videoSelect = false; 
   mov = new Movie(this, movieObjects[selectedMovie].filename); 
   mov.loop();
@@ -81,22 +70,6 @@ void mousePressed() {
   videoSelect = true;
   mov.stop();
   frame.setSize(displayWidth, displayHeight);
-  videoSelectScreen(); 
- }
-}
-
-void keyPressed() {
- if (key == 'n') {
-  if (firstVideoOnSelectionIndex+5 < movieObjects.length) {
-   firstVideoOnSelectionIndex += 5; 
-  }
-  videoSelectScreen();
- } 
- if (key == 'p') {
-  firstVideoOnSelectionIndex -= 5;
-  if (firstVideoOnSelectionIndex < 0) {
-   firstVideoOnSelectionIndex = 0; 
-  }
   videoSelectScreen(); 
  }
 }
@@ -120,24 +93,18 @@ void draw() {
 
    printVideoInfo();
   }
-  
-    //Kelausviiva
-  drawVideoSpeedLine();
-  
 }
 
 void handleInputs() {
 
-
-   handlePause();
-   
   readValues();
   changePlaybackSpeed();
   handleVolumeAndSkip();
-
-}
+  if (pressureRating > 500 ) {
+     arduino.digitalWrite(9, arduino.HIGH);
+   }
    
-
+}
 
 void changePlaybackSpeed() {
   double speedDownLimit = 0.5;
@@ -153,20 +120,14 @@ void changePlaybackSpeed() {
 }
 
 void videoSelectScreen() {
- int usedWidth = 10;
- int maxNumberOfVideosOnScreen = 5;
- background(0);
- 
- for (int i=firstVideoOnSelectionIndex; i < firstVideoOnSelectionIndex + maxNumberOfVideosOnScreen; i++) {
-  if (i >= movieObjects.length) {
-   break; 
-  }
-  String[] videoname = splitTokens(movieObjects[i].filename, System.getProperty("file.separator"));
-  String title = videoname[videoname.length-1];
+ int usedWidth = 0;
+ for (int i=0; i < movieObjects.length; i++) {
+  String[] file = splitTokens(movieObjects[i].filename, System.getProperty("file.separator"));
+  String title = file[file.length-1];
   image(movieObjects[i], usedWidth, height/2, width/5, height/5);
   text(title, usedWidth, height/2 + height/3);
-  usedWidth += movieObjects[i].width; 
- }
+  usedWidth += width/movieObjects.length;
+ } 
 }
 
 void printVideoInfo() {
@@ -180,7 +141,6 @@ void printVideoInfo() {
         text("Skipping video (not implemented yet)", 10, 90);
     }
     text("print coords here, x: y: ", 10, 110);
-    text("video paused " + movPaused, 10, 130);
 }
 
 void initializePins() {
@@ -196,16 +156,17 @@ void readValues() {
  playbackSpeed = map(arduino.analogRead(0), 0, 1023, 0.1, 3);  
 }
 
-void muteBasedOnPlaybackSpeed(float downLimit, float upLimit) {
-  if ( playbackSpeed < downLimit || playbackSpeed > upLimit ) {
-     mov.speed(playbackSpeed);  
-     mov.volume(0);
+void readButtonState() { 
+ if (arduino.digitalRead(7) == arduino.HIGH) {
+  if (buttonState) {
+    buttonState = false;
   }
   else {
-     mov.speed(1); //Normal speed
-     mov.volume(volume); // Normal volume
+    buttonState = true; 
   }
+ }
 }
+
 void handleVolumeAndSkip() {
   
   // If over 5 seconds has passed from pressing threeWayIn button, set skipVideos false
@@ -243,25 +204,9 @@ void handleVolumeAndSkip() {
 }
 
 void handleSkip() {
-    // current movie is stopped and its position is saved
-    float movTime = mov.time();
-    Movie currentMov = mov;
-    
-    // a (new) mov is selected by the user
-    //videoSelect = true;
-    videoSelectScreen();
-    //mov.pause();
-    
-    
-    // if the user didn't pick a new mov, old mov is continued from its current position    
-    if (mov.filename.equals(currentMov.filename)) {
-        mov = currentMov;
-        mov.loop();
-        mov.jump(movTime);        
-    }
-    else {
-      currentMov = null;
-    }
+    // to be implemented
+    //bootstrap = true;
+    //text("lol", 100, 100);
 }
 
 void handleVolume() {
@@ -286,140 +231,3 @@ void handleVolume() {
    } 
 }
 
-void handlePause() {
-  
-  if (pressureRating >= 800 && pressed == false) {
-       pressed = true;
-       boolean saveMovPaused = movPaused;
-       if(timeWhenPressed + 1000 > System.currentTimeMillis()) {
-            if(movPaused) {
-                movPaused = false;
-            } else {
-                movPaused = true;
-            }
-       }
-       if (saveMovPaused != movPaused) {
-           // to get pause changed with 2 click
-           timeWhenPressed = 0;
-       } else {
-           // video didnt pause with pressing, save last time when pressed
-           timeWhenPressed = System.currentTimeMillis();
-       }
-  }
-  if (pressureRating <= 200 && pressed) {
-      pressed = false;
-  }
-  
-  if (movPaused) {
-     mov.pause();
-  } else { 
-     mov.play();
-  }
-   
-}
-
-boolean pressureOn() {
-  if (pressureRating > 500) {
-    return true;
-  }
-  return false;
-}
-
-void drawVideoSpeedLine() {
-   ArrayList<TuioCursor> tuioCursorList = tuioClient.getTuioCursorList();
-   for (int i=0;i<tuioCursorList.size();i++) {
-      TuioCursor tcur = tuioCursorList.get(i);
-      ArrayList<TuioPoint> pointList = tcur.getPath();
-      
-      if (pointList.size()>0) {
-        stroke(255,0,0);
-        TuioPoint start_point = pointList.get(0);
-        for (int j=0;j<pointList.size();j++) {
-           TuioPoint end_point = pointList.get(j);
-           line(start_point.getScreenX(width),start_point.getScreenY(height),end_point.getScreenX(width),start_point.getScreenY(height));
-           //start_point = end_point;
-        }
-      }
-   } 
-}
-
-// called when an object is added to the scene
-void addTuioObject(TuioObject tobj) {
-  xBegin = tobj.getX();
-  println("add obj "+tobj.getSymbolID()+" ("+tobj.getSessionID()+") "+tobj.getX()+" "+tobj.getY()+" "+tobj.getAngle());
-}
-
-// called when an object is moved
-void updateTuioObject (TuioObject tobj) {
-  if (pressureOn()) {
-    playbackSpeed = map((0+(tobj.getX()-xBegin)), -0.5, 0.5, -3, 3);
-    if (playbackSpeed > 3) {
-      playbackSpeed = 3; 
-    }
-    else if (playbackSpeed < -3) {
-      playbackSpeed = -3;
-    }
-  }
-  
-  println("set obj "+tobj.getSymbolID()+" ("+tobj.getSessionID()+") "+tobj.getX()+" "+tobj.getY()+" "+tobj.getAngle()
-          +" "+tobj.getMotionSpeed()+" "+tobj.getRotationSpeed()+" "+tobj.getMotionAccel()+" "+tobj.getRotationAccel());
-}
-
-// called when an object is removed from the scene
-void removeTuioObject(TuioObject tobj) {
-  if (!pressureOn()){
-    playbackSpeed = 1;
-  }
-  
-  println("del obj "+tobj.getSymbolID()+" ("+tobj.getSessionID()+")");
-}
-
-// --------------------------------------------------------------
-// called when a cursor is added to the scene
-void addTuioCursor(TuioCursor tcur) {
-  xBegin = tcur.getX();
-  println("add cur "+tcur.getCursorID()+" ("+tcur.getSessionID()+ ") " +tcur.getX()+" "+tcur.getY());
-}
-
-// called when a cursor is moved
-void updateTuioCursor (TuioCursor tcur) {
-  //playbackSpeed = map(tcur.getX(), 0.0, 1.0, 0.1, 3);
-    playbackSpeed = map((0+(tcur.getX()-xBegin)), -0.5, 0.5, -3, 3);
-    if (playbackSpeed > 3) {
-      playbackSpeed = 3; 
-    } else if (playbackSpeed < -3) {
-      playbackSpeed = -3;
-    }
-  
-  println("set cur "+tcur.getCursorID()+" ("+tcur.getSessionID()+ ") " +tcur.getX()+" "+tcur.getY()
-          +" "+tcur.getMotionSpeed()+" "+tcur.getMotionAccel());
-}
-
-// called when a cursor is removed from the scene
-void removeTuioCursor(TuioCursor tcur) { 
-  playbackSpeed = 1;
-  println("del cur "+tcur.getCursorID()+" ("+tcur.getSessionID()+")" + "  " + tcur.getX());
-}
-
-// --------------------------------------------------------------
-// called when a blob is added to the scene
-void addTuioBlob(TuioBlob tblb) {
-  println("add blb "+tblb.getBlobID()+" ("+tblb.getSessionID()+") "+tblb.getX()+" "+tblb.getY()+" "+tblb.getAngle()+" "+tblb.getWidth()+" "+tblb.getHeight()+" "+tblb.getArea());
-}
-
-// called when a blob is moved
-void updateTuioBlob (TuioBlob tblb) {
-  println("set blb "+tblb.getBlobID()+" ("+tblb.getSessionID()+") "+tblb.getX()+" "+tblb.getY()+" "+tblb.getAngle()+" "+tblb.getWidth()+" "+tblb.getHeight()+" "+tblb.getArea()
-          +" "+tblb.getMotionSpeed()+" "+tblb.getRotationSpeed()+" "+tblb.getMotionAccel()+" "+tblb.getRotationAccel());
-}
-
-// called when a blob is removed from the scene
-void removeTuioBlob(TuioBlob tblb) {
-  println("del blb "+tblb.getBlobID()+" ("+tblb.getSessionID()+")");
-}
-
-// --------------------------------------------------------------
-// called at the end of each TUIO frame
-void refresh(TuioTime frameTime) { 
-  //println("frame #"+frameTime.getFrameID()+" ("+frameTime.getTotalMilliseconds()+")");
-}
