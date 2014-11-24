@@ -112,20 +112,19 @@ void handleInputs() {
    
 }
 
+//handles also volume when changing video speed
 void changePlaybackSpeed() {
   mov.speed(playbackSpeed);
-  
-  /*
   double speedDownLimit = 0.5;
   double speedUpLimit = 1.3; 
-  if ( playbackSpeed > speedDownLimit || playbackSpeed < speedUpLimit ) {
-     mov.speed(playbackSpeed);  
+  if ( playbackSpeed < speedDownLimit || playbackSpeed > speedUpLimit ) {
+     //mov.speed(playbackSpeed);  
      mov.volume(0);
   }
   else {
-     mov.speed(1); //Normal speed
+     //mov.speed(1); //Normal speed
      mov.volume(volume); // Normal volume
-  }*/
+  }
 }
 
 void videoSelectScreen() {
@@ -267,7 +266,7 @@ void drawVideoSpeedLine() {
 // called when an object is added to the scene
 void addTuioObject(TuioObject tobj) {
   xBegin = tobj.getX();
-  mov.volume(0);
+  //mov.volume(0);
   println("add obj "+tobj.getSymbolID()+" ("+tobj.getSessionID()+") "+tobj.getX()+" "+tobj.getY()+" "+tobj.getAngle());
 }
 
@@ -296,7 +295,7 @@ void updateTuioObject (TuioObject tobj) {
 // called when an object is removed from the scene
 void removeTuioObject(TuioObject tobj) {
   if (!pressureOn()){
-    mov.volume(1);
+    //mov.volume(1);
     playbackSpeed = 1;
   }
   
