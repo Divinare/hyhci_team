@@ -3,7 +3,9 @@ import cc.arduino.*;
 import processing.video.*;
 import processing.serial.*;
 import java.io.*;
+import TUIO.*;
 
+TuioProcessing tuioClient;
 Movie mov;
 Movie[] movieObjects;
 Arduino arduino;
@@ -21,6 +23,7 @@ float volume = 0.5;
 long volumeChanged = 0;
 boolean skipVideos = false;
 boolean videoSelect; //Are we just selecting the video to play
+float xBegin;
 
 void setup() {
   size(displayWidth, displayHeight);
@@ -31,6 +34,7 @@ void setup() {
   arduino = new Arduino(this, Arduino.list()[0], 57600);
   initializePins(); //Set Arduino pins on INPUT, except IR Led Pin is marked as OUTPUT 
   frame.setResizable(true);
+  tuioClient  = new TuioProcessing(this);
 }
 
 /*
@@ -92,6 +96,8 @@ void draw() {
    fill(255);
 
    printVideoInfo();
+   
+   drawVideoSpeedLine();
   }
 }
 
@@ -107,16 +113,19 @@ void handleInputs() {
 }
 
 void changePlaybackSpeed() {
+  mov.speed(playbackSpeed);
+  
+  /*
   double speedDownLimit = 0.5;
   double speedUpLimit = 1.3; 
-  if ( playbackSpeed < speedDownLimit || playbackSpeed > speedUpLimit ) {
+  if ( playbackSpeed > speedDownLimit || playbackSpeed < speedUpLimit ) {
      mov.speed(playbackSpeed);  
      mov.volume(0);
   }
   else {
      mov.speed(1); //Normal speed
      mov.volume(volume); // Normal volume
-  }
+  }*/
 }
 
 void videoSelectScreen() {
@@ -153,7 +162,7 @@ void initializePins() {
 
 void readValues() {
  pressureRating = arduino.analogRead(3);
- playbackSpeed = map(arduino.analogRead(0), 0, 1023, 0.1, 3);  
+ //playbackSpeed = map(arduino.analogRead(0), 0, 1023, 0.1, 3);  
 }
 
 void readButtonState() { 
@@ -231,3 +240,122 @@ void handleVolume() {
    } 
 }
 
+boolean pressureOn() {
+  if (pressureRating > 500) {
+    return true;
+  }
+  return false;
+}
+void drawVideoSpeedLine() {
+   ArrayList<TuioCursor> tuioCursorList = tuioClient.getTuioCursorList();
+   for (int i=0;i<tuioCursorList.size();i++) {
+      TuioCursor tcur = tuioCursorList.get(i);
+      ArrayList<TuioPoint> pointList = tcur.getPath();
+      
+      if (pointList.size()>0) {
+        stroke(255,0,0);
+        TuioPoint start_point = pointList.get(0);
+        for (int j=0;j<pointList.size();j++) {
+           TuioPoint end_point = pointList.get(j);
+           line(start_point.getScreenX(width),start_point.getScreenY(height),end_point.getScreenX(width),start_point.getScreenY(height));
+           //start_point = end_point;
+        }
+      }
+   } 
+}
+
+// called when an object is added to the scene
+void addTuioObject(TuioObject tobj) {
+  xBegin = tobj.getX();
+  mov.volume(0);
+  println("add obj "+tobj.getSymbolID()+" ("+tobj.getSessionID()+") "+tobj.getX()+" "+tobj.getY()+" "+tobj.getAngle());
+}
+
+// called when an object is moved
+void updateTuioObject (TuioObject tobj) {
+  if (pressureOn()) {
+    if (tobj.getX()>xBegin) {
+      //playbackSpeed = map(tcur.getX(), 0.0, 1.0, 0.1, 3);
+      playbackSpeed = map((0+(tobj.getX()-xBegin)), 0.0, 0.5, 0.1, 3);
+      if (playbackSpeed > 3) {
+        playbackSpeed = 3; 
+      }
+    }
+    if (tobj.getX()<xBegin) {
+      playbackSpeed = map((0+(tobj.getX()-xBegin)), 0.0, -0.5, -0.1, -3);  
+      if (playbackSpeed < -3) {    
+        playbackSpeed = -3;  
+      }
+    }
+  }
+  
+  println("set obj "+tobj.getSymbolID()+" ("+tobj.getSessionID()+") "+tobj.getX()+" "+tobj.getY()+" "+tobj.getAngle()
+          +" "+tobj.getMotionSpeed()+" "+tobj.getRotationSpeed()+" "+tobj.getMotionAccel()+" "+tobj.getRotationAccel());
+}
+
+// called when an object is removed from the scene
+void removeTuioObject(TuioObject tobj) {
+  if (!pressureOn()){
+    mov.volume(1);
+    playbackSpeed = 1;
+  }
+  
+  println("del obj "+tobj.getSymbolID()+" ("+tobj.getSessionID()+")");
+}
+
+// NOTE! Cursors mainly for testing, obj-methods for actual use with IR-emitter
+// --------------------------------------------------------------
+// called when a cursor is added to the scene
+void addTuioCursor(TuioCursor tcur) {
+  xBegin = tcur.getX();
+  mov.volume(0);
+  println("add cur "+tcur.getCursorID()+" ("+tcur.getSessionID()+ ") " +tcur.getX()+" "+tcur.getY());
+}
+
+// called when a cursor is moved
+void updateTuioCursor (TuioCursor tcur) {
+  if (tcur.getX()>xBegin) {
+    //playbackSpeed = map(tcur.getX(), 0.0, 1.0, 0.1, 3);
+    playbackSpeed = map((0+(tcur.getX()-xBegin)), 0.0, 0.5, 0.1, 3);
+    /*if (playbackSpeed > 3) {
+      playbackSpeed = 3; 
+    } */
+  } else if (tcur.getX()<xBegin) {
+    playbackSpeed = map((0+(tcur.getX()-xBegin)), 0.0, -0.5, -0.1, -3);  
+    if (playbackSpeed < -3) {    
+      playbackSpeed = -3;  
+    }
+}
+  println("set cur "+tcur.getCursorID()+" ("+tcur.getSessionID()+ ") " +tcur.getX()+" "+tcur.getY()
+          +" "+tcur.getMotionSpeed()+" "+tcur.getMotionAccel());
+}
+
+// called when a cursor is removed from the scene
+void removeTuioCursor(TuioCursor tcur) { 
+  playbackSpeed = 1;
+  mov.volume(1);
+  println("del cur "+tcur.getCursorID()+" ("+tcur.getSessionID()+")" + "  " + tcur.getX());
+}
+
+// --------------------------------------------------------------
+// called when a blob is added to the scene
+void addTuioBlob(TuioBlob tblb) {
+  println("add blb "+tblb.getBlobID()+" ("+tblb.getSessionID()+") "+tblb.getX()+" "+tblb.getY()+" "+tblb.getAngle()+" "+tblb.getWidth()+" "+tblb.getHeight()+" "+tblb.getArea());
+}
+
+// called when a blob is moved
+void updateTuioBlob (TuioBlob tblb) {
+  println("set blb "+tblb.getBlobID()+" ("+tblb.getSessionID()+") "+tblb.getX()+" "+tblb.getY()+" "+tblb.getAngle()+" "+tblb.getWidth()+" "+tblb.getHeight()+" "+tblb.getArea()
+          +" "+tblb.getMotionSpeed()+" "+tblb.getRotationSpeed()+" "+tblb.getMotionAccel()+" "+tblb.getRotationAccel());
+}
+
+// called when a blob is removed from the scene
+void removeTuioBlob(TuioBlob tblb) {
+  println("del blb "+tblb.getBlobID()+" ("+tblb.getSessionID()+")");
+}
+
+// --------------------------------------------------------------
+// called at the end of each TUIO frame
+void refresh(TuioTime frameTime) { 
+  //println("frame #"+frameTime.getFrameID()+" ("+frameTime.getTotalMilliseconds()+")");
+}
