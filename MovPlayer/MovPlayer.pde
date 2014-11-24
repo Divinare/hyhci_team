@@ -129,7 +129,7 @@ void draw() {
 void handleInputs() {
 
 
-   handlePause();
+  handlePause();
    
   readValues();
   changePlaybackSpeed();
@@ -352,12 +352,18 @@ void addTuioObject(TuioObject tobj) {
 // called when an object is moved
 void updateTuioObject (TuioObject tobj) {
   if (pressureOn()) {
-    playbackSpeed = map((0+(tobj.getX()-xBegin)), -0.5, 0.5, -3, 3);
-    if (playbackSpeed > 3) {
-      playbackSpeed = 3; 
+    if (tobj.getX()>xBegin) {
+      //playbackSpeed = map(tcur.getX(), 0.0, 1.0, 0.1, 3);
+      playbackSpeed = map((0+(tobj.getX()-xBegin)), 0.0, 0.5, 2.3, 3);
+      if (playbackSpeed > 3) {
+        playbackSpeed = 3; 
+      }
     }
-    else if (playbackSpeed < -3) {
-      playbackSpeed = -3;
+    if (tobj.getX()<xBegin) {
+      playbackSpeed = map((0+(tobj.getX()-xBegin)), 0.0, -0.5, -0.1, -3);  
+      if (playbackSpeed < -3) {    
+        playbackSpeed = -3;  
+      }
     }
   }
   
@@ -383,14 +389,20 @@ void addTuioCursor(TuioCursor tcur) {
 
 // called when a cursor is moved
 void updateTuioCursor (TuioCursor tcur) {
-  //playbackSpeed = map(tcur.getX(), 0.0, 1.0, 0.1, 3);
-    playbackSpeed = map((0+(tcur.getX()-xBegin)), -0.5, 0.5, -3, 3);
+  if (tcur.getX()>xBegin) {
+    //playbackSpeed = map(tcur.getX(), 0.0, 1.0, 0.1, 3);
+    mov.frameRate(2);
+    playbackSpeed = map((0+(tcur.getX()-xBegin)), 0.0, 0.5, 2.1, 3);
     if (playbackSpeed > 3) {
       playbackSpeed = 3; 
-    } else if (playbackSpeed < -3) {
-      playbackSpeed = -3;
+    } 
+  }
+  if (tcur.getX()<xBegin) {
+    playbackSpeed = map((0+(tcur.getX()-xBegin)), 0.0, -0.5, -0.1, -3);  
+    if (playbackSpeed < -3) {    
+      playbackSpeed = -3;  
     }
-  
+}
   println("set cur "+tcur.getCursorID()+" ("+tcur.getSessionID()+ ") " +tcur.getX()+" "+tcur.getY()
           +" "+tcur.getMotionSpeed()+" "+tcur.getMotionAccel());
 }
