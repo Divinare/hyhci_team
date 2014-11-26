@@ -298,15 +298,19 @@ void togglePause() {
 
 // called when an object is moved
 void updateTuioObject (TuioObject tobj) {
+  float deltaX = 0+(tobj.getX()-xBegin);
+  if (pausedState) {
+   frameByFrame(deltaX); 
+  }
   if (pressureOn()) {
-    if (tobj.getX()>xBegin) {
-      playbackSpeed = map((0+(tobj.getX()-xBegin)), 0.0, 0.5, 0.1, 3);
+    if (deltaX > 0.0) {
+      playbackSpeed = map(deltaX, 0.0, 0.5, 0.1, 3);
       if (playbackSpeed > 3) {
         playbackSpeed = 3; 
       }
     }
-    if (tobj.getX()<xBegin) {
-      playbackSpeed = map((0+(tobj.getX()-xBegin)), 0.0, -0.5, -0.1, -3);  
+    if (deltaX < 0.0) {
+      playbackSpeed = map(deltaX, 0.0, -0.5, -0.1, -3);  
       if (playbackSpeed < -3) {    
         playbackSpeed = -3;  
       }
@@ -317,8 +321,17 @@ void updateTuioObject (TuioObject tobj) {
           +" "+tobj.getMotionSpeed()+" "+tobj.getRotationSpeed()+" "+tobj.getMotionAccel()+" "+tobj.getRotationAccel());
 }
 
+void frameByFrame(float speed) {
+ mov.frameRate(map(speed, 0.0, 0.5, 0.3, 5));
+ mov.play(); 
+}
+
 // called when an object is removed from the scene
 void removeTuioObject(TuioObject tobj) {
+  if (pausedState) {
+   mov.pause();
+   mov.frameRate(frameRate); //Framerate to the approx framerate of the whole sketch 
+  }
   if (!pressureOn()){
     //mov.volume(1);
     playbackSpeed = 1;
