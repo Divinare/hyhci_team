@@ -14,7 +14,7 @@ Movie[] movieObjects;
 Arduino arduino;
 int pressureRating;
 boolean buttonState = false; //true for pressed down
-float playbackSpeed;
+float playbackSpeed = 1.0;
 int threeWayDown = 3;
 int threeWayIn = 4;
 int threeWayUp = 5;
@@ -127,10 +127,9 @@ void toggleIRLed(int pinValue) {
 }
 
 void changePlaybackSpeed() {
-  
   mov.speed(playbackSpeed);
   double speedDownLimit = 0.5;
-  double speedUpLimit = 1.3; 
+  double speedUpLimit = 1.3;
   if ( playbackSpeed < speedDownLimit || playbackSpeed > speedUpLimit ) {  
      mov.volume(0);
   }
@@ -351,11 +350,12 @@ void addTuioCursor(TuioCursor tcur) {
 
 // called when a cursor is moved
 void updateTuioCursor (TuioCursor tcur) {
+  float change = tcur.getX()-xBegin;
   if (tcur.getX()>xBegin) {
-    playbackSpeed = map((0+(tcur.getX()-xBegin)), 0.0, 0.5, 0.1, 3);
-    /*if (playbackSpeed > 3) {
-      playbackSpeed = 3; 
-    } */
+    playbackSpeed = map(change, 0.0, 0.5, 0.1, 3);
+    if (playbackSpeed > 3) {
+      playbackSpeed = 3;
+    }
   } else if (tcur.getX()<xBegin) {
     playbackSpeed = map((0+(tcur.getX()-xBegin)), 0.0, -0.5, -0.1, -3);  
     if (playbackSpeed < -3) {    
@@ -370,7 +370,7 @@ void updateTuioCursor (TuioCursor tcur) {
 void removeTuioCursor(TuioCursor tcur) { 
   playbackSpeed = 1;
   mov.volume(1);
-  println("del cur "+tcur.getCursorID()+" ("+tcur.getSessionID()+")" + "  " + tcur.getX());
+  println("del cur "+tcur.getCursorID()+" ("+tcur.getSessionID()+")" + "  " + tcur.getX() + " ");
 }
 
 // --------------------------------------------------------------
