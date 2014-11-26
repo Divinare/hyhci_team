@@ -94,7 +94,7 @@ void draw() {
   else {
    frame.setSize(mov.width, mov.height);
 
-   handleInputs(); 
+   userEvents(); 
   
    image(mov, 0, 0);
   
@@ -106,7 +106,7 @@ void draw() {
   }
 }
 
-void handleInputs() {
+void userEvents() {
 
   toggleIRLed(arduino.analogRead(pressureSensor));   
   changePlaybackSpeed();
