@@ -311,10 +311,10 @@ void updateTuioObject (TuioObject tobj) {
 
 // called when an object is removed from the scene
 void removeTuioObject(TuioObject tobj) {
-  if (!pressureOn()){
-    //mov.volume(1);
+
+    mov.volume(1);
     playbackSpeed = 1;
-  }
+  
   
   println("del obj "+tobj.getSymbolID()+" ("+tobj.getSessionID()+")");
 }
@@ -331,6 +331,7 @@ void addTuioCursor(TuioCursor tcur) {
 // called when a cursor is moved
 void updateTuioCursor (TuioCursor tcur) {
   float change = tcur.getX()-xBegin;
+  
   if (tcur.getX()>xBegin) {
     playbackSpeed = map(change, 0.0, 0.5, 0.1, 3);
     if (playbackSpeed > 3) {
@@ -341,7 +342,8 @@ void updateTuioCursor (TuioCursor tcur) {
     if (playbackSpeed < -3) {    
       playbackSpeed = -3;  
     }
-}
+  }
+
   println("set cur "+tcur.getCursorID()+" ("+tcur.getSessionID()+ ") " +tcur.getX()+" "+tcur.getY()
           +" "+tcur.getMotionSpeed()+" "+tcur.getMotionAccel());
 }
