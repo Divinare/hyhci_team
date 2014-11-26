@@ -161,9 +161,6 @@ void printVideoInfo() {
         text("Volume " + volume, 10, 70);
     }
     
-    if (skipVideos) {
-        text("Skipping video (not implemented yet)", 10, 90);
-    }
     text("print coords here, x: y: ", 10, 110);
     
 }
