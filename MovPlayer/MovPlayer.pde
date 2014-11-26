@@ -5,6 +5,7 @@ import processing.serial.*;
 import java.io.*;
 import TUIO.*;
 
+
 TuioProcessing tuioClient;
 Movie mov;
 Movie[] movieObjects;
@@ -22,8 +23,10 @@ long skipVideosChanged = 0;
 float volume = 0.5;
 long volumeChanged = 0;
 boolean skipVideos = false;
+boolean pausedState = false;
 boolean videoSelect; //Are we just selecting the video to play
 float xBegin;
+int lastTuioEvent;
 
 void setup() {
   size(displayWidth, displayHeight);
@@ -62,6 +65,7 @@ void initializeVideoLibrary() {
   
 }
 
+//This needs to be moved into the TUIO objects
 void mousePressed() {
  if (videoSelect) {
   int selectedMovie = (int)map(mouseX, 0, width, 0, movieObjects.length);
@@ -245,6 +249,7 @@ boolean pressureOn() {
   }
   return false;
 }
+
 void drawVideoSpeedLine() {
    ArrayList<TuioCursor> tuioCursorList = tuioClient.getTuioCursorList();
    for (int i=0;i<tuioCursorList.size();i++) {
@@ -265,8 +270,12 @@ void drawVideoSpeedLine() {
 
 // called when an object is added to the scene
 void addTuioObject(TuioObject tobj) {
+  if (millis() - lastTuioEvent < 200) {
+   mov.pause();
+   pausedState = true;
+  }
   xBegin = tobj.getX();
-  //mov.volume(0);
+  lastTuioEvent = millis();
   println("add obj "+tobj.getSymbolID()+" ("+tobj.getSessionID()+") "+tobj.getX()+" "+tobj.getY()+" "+tobj.getAngle());
 }
 
@@ -274,7 +283,6 @@ void addTuioObject(TuioObject tobj) {
 void updateTuioObject (TuioObject tobj) {
   if (pressureOn()) {
     if (tobj.getX()>xBegin) {
-      //playbackSpeed = map(tcur.getX(), 0.0, 1.0, 0.1, 3);
       playbackSpeed = map((0+(tobj.getX()-xBegin)), 0.0, 0.5, 0.1, 3);
       if (playbackSpeed > 3) {
         playbackSpeed = 3; 
@@ -314,7 +322,6 @@ void addTuioCursor(TuioCursor tcur) {
 // called when a cursor is moved
 void updateTuioCursor (TuioCursor tcur) {
   if (tcur.getX()>xBegin) {
-    //playbackSpeed = map(tcur.getX(), 0.0, 1.0, 0.1, 3);
     playbackSpeed = map((0+(tcur.getX()-xBegin)), 0.0, 0.5, 0.1, 3);
     /*if (playbackSpeed > 3) {
       playbackSpeed = 3; 
