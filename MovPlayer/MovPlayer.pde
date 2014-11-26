@@ -141,6 +141,7 @@ void changePlaybackSpeed() {
 }
 
 void videoSelectScreen() {
+  
  int usedWidth = 0;
  for (int i=0; i < movieObjects.length; i++) {
   String[] file = splitTokens(movieObjects[i].filename, System.getProperty("file.separator"));
@@ -148,10 +149,12 @@ void videoSelectScreen() {
   image(movieObjects[i], usedWidth, height/2, width/5, height/5);
   text(title, usedWidth, height/2 + height/3);
   usedWidth += width/movieObjects.length;
- } 
+ }
+ 
 }
 
 void printVideoInfo() {
+  
   text("TITLE: " + mov.filename + "\n SPEED: " + nfc(playbackSpeed, 2) + "X" + "\n Pressure reading: " + pressureRating, 10, 30);
     
     if (volumeChanged + 2000 > System.currentTimeMillis()) {
@@ -162,6 +165,7 @@ void printVideoInfo() {
         text("Skipping video (not implemented yet)", 10, 90);
     }
     text("print coords here, x: y: ", 10, 110);
+    
 }
 
 void initializePins() {
