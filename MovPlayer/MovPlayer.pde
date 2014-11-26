@@ -165,7 +165,6 @@ void initializePins() {
 
 void readValues() {
  pressureRating = arduino.analogRead(3);
- //playbackSpeed = map(arduino.analogRead(0), 0, 1023, 0.1, 3);  
 }
 
 void readButtonState() { 
@@ -216,9 +215,10 @@ void handleVolumeAndSkip() {
 }
 
 void handleSkip() {
-    // to be implemented
-    //bootstrap = true;
-    //text("lol", 100, 100);
+  videoSelect = true;
+  mov.stop();
+  frame.setSize(displayWidth, displayHeight);
+  videoSelectScreen();
 }
 
 void handleVolume() {
