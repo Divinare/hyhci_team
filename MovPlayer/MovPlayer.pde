@@ -270,13 +270,35 @@ void drawVideoSpeedLine() {
 
 // called when an object is added to the scene
 void addTuioObject(TuioObject tobj) {
-  if (millis() - lastTuioEvent < 200) {
-   mov.pause();
-   pausedState = true;
+  if (videoSelect) {
+   selectMovie(tobj.getX());
   }
-  xBegin = tobj.getX();
-  lastTuioEvent = millis();
-  println("add obj "+tobj.getSymbolID()+" ("+tobj.getSessionID()+") "+tobj.getX()+" "+tobj.getY()+" "+tobj.getAngle());
+  else {
+   if (millis() - lastTuioEvent < 200) {
+    togglePause();
+   }
+   xBegin = tobj.getX();
+   lastTuioEvent = millis();
+   println("add obj "+tobj.getSymbolID()+" ("+tobj.getSessionID()+") "+tobj.getX()+" "+tobj.getY()+" "+tobj.getAngle());
+  }
+}
+
+void selectMovie(float selection) {
+ int selectedMovie = (int)map(selection, 0, width, 0, movieObjects.length);
+ videoSelect = false; 
+ mov = new Movie(this, movieObjects[selectedMovie].filename); 
+ mov.loop(); 
+}
+
+void togglePause() {
+ if (pausedState) {
+  mov.play();
+  pausedState = false;
+ } 
+ else  {
+  mov.pause(); 
+  pausedState = true;
+ }
 }
 
 // called when an object is moved
