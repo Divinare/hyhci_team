@@ -331,16 +331,17 @@ void addTuioCursor(TuioCursor tcur) {
 // called when a cursor is moved
 void updateTuioCursor (TuioCursor tcur) {
   float change = tcur.getX()-xBegin;
-  
-  if (tcur.getX()>xBegin) {
-    playbackSpeed = map(change, 0.0, 0.5, 0.1, 3);
-    if (playbackSpeed > 3) {
-      playbackSpeed = 3;
-    }
-  } else if (tcur.getX()<xBegin) {
-    playbackSpeed = map((0+(tcur.getX()-xBegin)), 0.0, -0.5, -0.1, -3);  
-    if (playbackSpeed < -3) {    
-      playbackSpeed = -3;  
+  if (Math.abs(change) > 0.001) {
+    if (tcur.getX()>xBegin) {
+      playbackSpeed = map(change, 0.0, 0.5, 0.1, 3);
+      if (playbackSpeed > 3) {
+        playbackSpeed = 3;
+      }
+    } else if (tcur.getX()<xBegin) {
+      playbackSpeed = map((0+(tcur.getX()-xBegin)), 0.0, -0.5, -0.1, -3);  
+      if (playbackSpeed < -3) {    
+        playbackSpeed = -3;  
+      }
     }
   }
 
