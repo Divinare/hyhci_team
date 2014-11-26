@@ -5,7 +5,9 @@ import processing.serial.*;
 import java.io.*;
 import TUIO.*;
 
-
+//PINS
+int IRLed = 9;
+int pressureSensor = 3;
 TuioProcessing tuioClient;
 Movie mov;
 Movie[] movieObjects;
@@ -13,8 +15,6 @@ Arduino arduino;
 int pressureRating;
 boolean buttonState = false; //true for pressed down
 float playbackSpeed;
-int framesBeforeGettingButtonState = 5; //So that we avoid reading the button state every frame
-int IRLed = 9;
 int threeWayDown = 3;
 int threeWayIn = 4;
 int threeWayUp = 5;
@@ -65,7 +65,8 @@ void initializeVideoLibrary() {
   
 }
 
-//This needs to be moved into the TUIO objects
+//TODO:
+//This needs to be removed after testing that everything works with TUIO
 void mousePressed() {
  if (videoSelect) {
   int selectedMovie = (int)map(mouseX, 0, width, 0, movieObjects.length);
@@ -107,28 +108,36 @@ void draw() {
 
 void handleInputs() {
 
-  readValues();
+  toggleIRLed(arduino.analogRead(pressureSensor));   
   changePlaybackSpeed();
   handleVolumeAndSkip();
-  if (pressureRating > 500 ) {
-     arduino.digitalWrite(9, arduino.HIGH);
-   }
    
 }
 
-//handles also volume when changing video speed
+void toggleIRLed(int pinValue) {
+  
+  pressureRating = pinValue;
+  if (pressureRating > 500) {
+   arduino.digitalWrite(IRLed, arduino.HIGH); 
+  }
+  else {
+   arduino.digitalWrite(IRLed, arduino.LOW); 
+  }
+  
+}
+
 void changePlaybackSpeed() {
+  
   mov.speed(playbackSpeed);
   double speedDownLimit = 0.5;
   double speedUpLimit = 1.3; 
-  if ( playbackSpeed < speedDownLimit || playbackSpeed > speedUpLimit ) {
-     //mov.speed(playbackSpeed);  
+  if ( playbackSpeed < speedDownLimit || playbackSpeed > speedUpLimit ) {  
      mov.volume(0);
   }
   else {
-     //mov.speed(1); //Normal speed
      mov.volume(volume); // Normal volume
   }
+  
 }
 
 void videoSelectScreen() {
@@ -161,21 +170,6 @@ void initializePins() {
 
   //IR Led  
   arduino.pinMode(IRLed, arduino.OUTPUT);  
-}
-
-void readValues() {
- pressureRating = arduino.analogRead(3);
-}
-
-void readButtonState() { 
- if (arduino.digitalRead(7) == arduino.HIGH) {
-  if (buttonState) {
-    buttonState = false;
-  }
-  else {
-    buttonState = true; 
-  }
- }
 }
 
 void handleVolumeAndSkip() {
@@ -271,7 +265,7 @@ void drawVideoSpeedLine() {
 // called when an object is added to the scene
 void addTuioObject(TuioObject tobj) {
   if (videoSelect) {
-   selectMovie(tobj.getX());
+   selectVideo(tobj.getX());
   }
   else {
    if (millis() - lastTuioEvent < 200) {
@@ -283,7 +277,7 @@ void addTuioObject(TuioObject tobj) {
   }
 }
 
-void selectMovie(float selection) {
+void selectVideo(float selection) {
  int selectedMovie = (int)map(selection, 0, width, 0, movieObjects.length);
  videoSelect = false; 
  mov = new Movie(this, movieObjects[selectedMovie].filename); 
