@@ -117,7 +117,7 @@ void userEvents() {
 void toggleIRLed(int pinValue) {
   
   pressureRating = pinValue;
-  if (pressureRating > 500) {
+  if (pressureRating > 900) {
    arduino.digitalWrite(IRLed, arduino.HIGH); 
   }
   else {
@@ -261,7 +261,7 @@ void addTuioObject(TuioObject tobj) {
    selectVideo(tobj.getX());
   }
   else {
-   if (millis() - lastTuioEvent < 200) {
+   if (millis() - lastTuioEvent < 1000) {
     togglePause();
    }
    xBegin = tobj.getX();
@@ -271,10 +271,12 @@ void addTuioObject(TuioObject tobj) {
 }
 
 void selectVideo(float selection) {
- int selectedMovie = (int)map(selection, 0, width, 0, movieObjects.length);
- videoSelect = false; 
- mov = new Movie(this, movieObjects[selectedMovie].filename); 
- mov.loop(); 
+ 
+ int selectedMovie = (int)map(selection, 0, 1, 0, movieObjects.length); 
+ mov = new Movie(this, movieObjects[selectedMovie].filename);
+ mov.loop();
+ videoSelect = false;
+ 
 }
 
 void togglePause() {
@@ -323,13 +325,18 @@ void removeTuioObject(TuioObject tobj) {
 // --------------------------------------------------------------
 // called when a cursor is added to the scene
 void addTuioCursor(TuioCursor tcur) {
-  xBegin = tcur.getX();
-  mov.volume(0);
+  
+  toggleIRLed(arduino.analogRead(pressureSensor));
+  //xBegin = tcur.getX();
+  //mov.volume(0);
   println("add cur "+tcur.getCursorID()+" ("+tcur.getSessionID()+ ") " +tcur.getX()+" "+tcur.getY());
 }
 
 // called when a cursor is moved
 void updateTuioCursor (TuioCursor tcur) {
+  
+  toggleIRLed(arduino.analogRead(pressureSensor));
+  /*Commented out for testing IRLed
   float change = tcur.getX()-xBegin;
   
   if (tcur.getX()>xBegin) {
@@ -342,7 +349,7 @@ void updateTuioCursor (TuioCursor tcur) {
     if (playbackSpeed < -3) {    
       playbackSpeed = -3;  
     }
-  }
+  }*/
 
   println("set cur "+tcur.getCursorID()+" ("+tcur.getSessionID()+ ") " +tcur.getX()+" "+tcur.getY()
           +" "+tcur.getMotionSpeed()+" "+tcur.getMotionAccel());
@@ -350,8 +357,9 @@ void updateTuioCursor (TuioCursor tcur) {
 
 // called when a cursor is removed from the scene
 void removeTuioCursor(TuioCursor tcur) { 
-  playbackSpeed = 1;
-  mov.volume(1);
+  //playbackSpeed = 1;
+  //mov.volume(1);
+  arduino.digitalWrite(IRLed, arduino.LOW);
   println("del cur "+tcur.getCursorID()+" ("+tcur.getSessionID()+")" + "  " + tcur.getX() + " ");
 }
 
