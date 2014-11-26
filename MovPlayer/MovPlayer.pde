@@ -287,7 +287,7 @@ void selectVideo(float selection) {
 
 void togglePause() {
  if (pausedState) {
-  mov.play();
+  mov.loop();
   pausedState = false;
  } 
  else  {
@@ -323,7 +323,7 @@ void updateTuioObject (TuioObject tobj) {
 
 void frameByFrame(float speed) {
  mov.frameRate(map(speed, 0.0, 0.5, 0.3, 5));
- mov.play(); 
+ mov.loop(); 
 }
 
 // called when an object is removed from the scene
