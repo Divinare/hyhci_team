@@ -279,7 +279,7 @@ void selectVideo(float selection) {
 
 void togglePause() {
  if (pausedState) {
-  mov.play();
+  mov.loop();
   pausedState = false;
  } 
  else  {
