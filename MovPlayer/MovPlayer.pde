@@ -27,6 +27,9 @@ boolean pausedState = false;
 boolean videoSelect; //Are we just selecting the video to play
 float xBegin;
 int lastTuioEvent;
+long timeWhenPressed = 0;
+boolean movPaused = false;
+boolean pressed = false;
 
 void setup() {
   size(displayWidth, displayHeight, P2D);
@@ -115,7 +118,7 @@ void userEvents() {
 }
 
 void toggleIRLed(int pinValue) {
-  
+  text("pressure rating: " + pressureRating, 10, 50);
   pressureRating = pinValue;
   if (pressureRating > 900) {
    arduino.digitalWrite(IRLed, arduino.HIGH); 
@@ -127,6 +130,8 @@ void toggleIRLed(int pinValue) {
 }
 
 void changePlaybackSpeed() {
+// if(playbackSpeed > 0) { return; }'
+  text("speeeed " + playbackSpeed, 10, 50);
   mov.speed(playbackSpeed);
   double speedDownLimit = 0.5;
   double speedUpLimit = 1.3;
@@ -140,7 +145,7 @@ void changePlaybackSpeed() {
 }
 
 void videoSelectScreen() {
-  
+ toggleIRLed(arduino.analogRead(pressureSensor));   
  int usedWidth = 0;
  for (int i=0; i < movieObjects.length; i++) {
   String[] file = splitTokens(movieObjects[i].filename, System.getProperty("file.separator"));
@@ -153,8 +158,13 @@ void videoSelectScreen() {
 }
 
 void printVideoInfo() {
-  
-  text("TITLE: " + mov.filename + "\n SPEED: " + nfc(playbackSpeed, 2) + "X" + "\n Pressure reading: " + pressureRating, 10, 30);
+   String videoSpeed = "";
+  if(playbackSpeed < 0) {
+     videoSpeed = "rewinding";
+  } else if (playbackSpeed > 1) {
+      videoSpeed = "fastforwarding ";
+  }
+  text("TITLE: " + mov.filename + "\n SPEED: " + videoSpeed + nfc(playbackSpeed, 2) + "X" + "\n Pressure reading: " + pressureRating, 10, 30);
     
     if (volumeChanged + 2000 > System.currentTimeMillis()) {
         text("Volume " + volume, 10, 70);
@@ -200,6 +210,7 @@ void handleVolumeAndSkip() {
    if (skipVideos) {
      handleSkip();
    } else {
+      handlePause();
       handleVolume(); 
    }
  
@@ -214,6 +225,41 @@ void handleSkip() {
   frame.setSize(displayWidth, displayHeight);
   videoSelectScreen();
 }
+
+
+void handlePause() {
+  
+  if (pressureRating >= 950 && pressed == false) {
+       pressed = true;
+       boolean saveMovPaused = movPaused;
+       if(timeWhenPressed + 500 > System.currentTimeMillis()) {
+            if(movPaused) {
+                movPaused = false;
+            } else {
+                movPaused = true;
+            }
+       }
+       if (saveMovPaused != movPaused) {
+           // to get pause changed with 2 click
+           timeWhenPressed = 0;
+       } else {
+           // video didnt pause with pressing, save last time when pressed
+           timeWhenPressed = System.currentTimeMillis();
+       }
+  }
+  if (pressureRating <= 950 && pressed) {
+      pressed = false;
+  }
+  
+  if (movPaused) {
+     mov.pause();
+  } else { 
+     mov.play();
+  }
+   
+}
+
+
 
 void handleVolume() {
   
@@ -259,10 +305,11 @@ void drawVideoSpeedLine() {
 void addTuioObject(TuioObject tobj) {
   if (videoSelect) {
    selectVideo(tobj.getX());
+   text("something", 0, 130);
   }
   else {
    if (millis() - lastTuioEvent < 1000) {
-    togglePause();
+    //togglePause();
    }
    xBegin = tobj.getX();
    lastTuioEvent = millis();
@@ -273,6 +320,7 @@ void addTuioObject(TuioObject tobj) {
 void selectVideo(float selection) {
  
  int selectedMovie = (int)map(selection, 0, 1, 0, movieObjects.length); 
+   text("selected movie: " + selectedMovie, 10, 100);
  mov = new Movie(this, movieObjects[selectedMovie].filename);
  mov.loop();
  videoSelect = false;
@@ -296,23 +344,32 @@ void updateTuioObject (TuioObject tobj) {
     
   
     float change = tobj.getX()-xBegin;
-    if (Math.abs(change) > 0.001) {
+  //  if (change < 0.2 ) {
+    //  println("Not rewinding");
+ //       return;
+  //  }
+    if (Math.abs(change) > 0.01) {
       if (tobj.getX()>xBegin) {
         playbackSpeed = map(change, 0.0, 0.5, 1, 3);
+         println("fastfowardinjg speed value: " + playbackSpeed);
         if (playbackSpeed > 3) {
           playbackSpeed = 3; 
         }
       }
       else if (tobj.getX()<xBegin) {
         playbackSpeed = map(change, 0.0, -0.5, -1, -3);  
+           println("rewinding speed value: " + playbackSpeed);
         if (playbackSpeed < -3) {    
           playbackSpeed = -3;  
         }
       }
     }
+    //if (playbackSpeed == 0) {
+    //  playbackSpeed = 0.1;
+   // }
+   text("speed: " + playbackSpeed, 10, 60);
   
-  
-  println("set obj "+tobj.getSymbolID()+" ("+tobj.getSessionID()+") "+tobj.getX()+" "+tobj.getY());
+  //println("set obj "+tobj.getSymbolID()+" ("+tobj.getSessionID()+") "+tobj.getX()+" "+tobj.getY());
 }
 
 // called when an object is removed from the scene
