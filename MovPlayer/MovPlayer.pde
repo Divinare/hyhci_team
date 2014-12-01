@@ -292,23 +292,27 @@ void togglePause() {
 
 // called when an object is moved
 void updateTuioObject (TuioObject tobj) {
+    
+    
   
-    if (tobj.getX()>xBegin) {
-      playbackSpeed = map((0+(tobj.getX()-xBegin)), 0.0, 0.5, 0.1, 3);
-      if (playbackSpeed > 3) {
-        playbackSpeed = 3; 
+    float change = tobj.getX()-xBegin;
+    if (Math.abs(change) > 0.001) {
+      if (tobj.getX()>xBegin) {
+        playbackSpeed = map(change, 0.0, 0.5, 1, 3);
+        if (playbackSpeed > 3) {
+          playbackSpeed = 3; 
+        }
+      }
+      else if (tobj.getX()<xBegin) {
+        playbackSpeed = map(change, 0.0, -0.5, -1, -3);  
+        if (playbackSpeed < -3) {    
+          playbackSpeed = -3;  
+        }
       }
     }
-    if (tobj.getX()<xBegin) {
-      playbackSpeed = map((0+(tobj.getX()-xBegin)), 0.0, -0.5, -0.1, -3);  
-      if (playbackSpeed < -3) {    
-        playbackSpeed = -3;  
-      }
-    }
   
   
-  println("set obj "+tobj.getSymbolID()+" ("+tobj.getSessionID()+") "+tobj.getX()+" "+tobj.getY()+" "+tobj.getAngle()
-          +" "+tobj.getMotionSpeed()+" "+tobj.getRotationSpeed()+" "+tobj.getMotionAccel()+" "+tobj.getRotationAccel());
+  println("set obj "+tobj.getSymbolID()+" ("+tobj.getSessionID()+") "+tobj.getX()+" "+tobj.getY());
 }
 
 // called when an object is removed from the scene
