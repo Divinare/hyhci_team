@@ -29,7 +29,7 @@ float xBegin;
 int lastTuioEvent;
 
 void setup() {
-  size(displayWidth, displayHeight);
+  size(displayWidth, displayHeight, P2D);
   background(0);
   
   initializeVideoLibrary();
