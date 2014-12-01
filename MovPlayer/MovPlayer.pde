@@ -33,10 +33,8 @@ boolean pressed = false;
 
 void setup() {
   size(displayWidth, displayHeight, P2D);
-  background(0);
-  
-  initializeVideoLibrary();
-  
+  background(0);  
+  initializeVideoLibrary();  
   arduino = new Arduino(this, Arduino.list()[0], 57600);
   initializePins(); //Set Arduino pins on INPUT, except IR Led Pin is marked as OUTPUT 
   frame.setResizable(true);
@@ -46,8 +44,7 @@ void setup() {
 /*
 * Get all the video files in sketch data folder, get a frame at 3 seconds from video start
 */
-void initializeVideoLibrary() {
-  
+void initializeVideoLibrary() {  
   videoSelect = true;
   File dir = new File(dataPath(""));
   File[] videos = dir.listFiles(new FileFilter() {
@@ -64,21 +61,17 @@ void initializeVideoLibrary() {
    movieObjects[i].jump(3);
    movieObjects[i].volume(volume);
    movieObjects[i].pause();
-  }
-  
+  }  
 }
 
-//TODO:
-//This needs to be removed after testing that everything works with TUIO
+// For demo purposes, selecting a video with mouse
 void mousePressed() {
  if (videoSelect) {
   int selectedMovie = (int)map(mouseX, 0, width, 0, movieObjects.length);
   videoSelect = false; 
   mov = new Movie(this, movieObjects[selectedMovie].filename); 
   mov.loop();
- }
- else
- {
+ } else {
   videoSelect = true;
   mov.stop();
   frame.setSize(displayWidth, displayHeight);
@@ -96,99 +89,81 @@ void draw() {
   }
   else {
    frame.setSize(mov.width, mov.height);
-
-   userEvents(); 
-  
-   image(mov, 0, 0);
-  
+   userEvents();   
+   image(mov, 0, 0);  
    fill(255);
-
-   printVideoInfo();
-   
+   printVideoInfo();   
    drawVideoSpeedLine();
   }
 }
 
 void userEvents() {
-
   toggleIRLed(arduino.analogRead(pressureSensor));   
   changePlaybackSpeed();
-  handleVolumeAndSkip();
-   
+  handleVolumeAndSkip();   
 }
 
 void toggleIRLed(int pinValue) {
   text("pressure rating: " + pressureRating, 10, 50);
   pressureRating = pinValue;
   if (pressureRating > 900) {
-   arduino.digitalWrite(IRLed, arduino.HIGH); 
-  }
-  else {
-   arduino.digitalWrite(IRLed, arduino.LOW); 
-  }
-  
+    arduino.digitalWrite(IRLed, arduino.HIGH); 
+  } else {
+    arduino.digitalWrite(IRLed, arduino.LOW); 
+  }  
 }
 
 void changePlaybackSpeed() {
-// if(playbackSpeed > 0) { return; }'
   text("speeeed " + playbackSpeed, 10, 50);
   mov.speed(playbackSpeed);
   double speedDownLimit = 0.5;
   double speedUpLimit = 1.3;
   if ( playbackSpeed < speedDownLimit || playbackSpeed > speedUpLimit ) {  
      mov.volume(0);
-  }
-  else {
+  } else {
      mov.volume(volume); // Normal volume
-  }
-  
+  }  
 }
 
 void videoSelectScreen() {
  toggleIRLed(arduino.analogRead(pressureSensor));   
  int usedWidth = 0;
  for (int i=0; i < movieObjects.length; i++) {
-  String[] file = splitTokens(movieObjects[i].filename, System.getProperty("file.separator"));
-  String title = file[file.length-1];
-  image(movieObjects[i], usedWidth, height/2, width/5, height/5);
-  text(title, usedWidth, height/2 + height/3);
-  usedWidth += width/movieObjects.length;
- }
- 
+   String[] file = splitTokens(movieObjects[i].filename, System.getProperty("file.separator"));
+   String title = file[file.length-1];
+   image(movieObjects[i], usedWidth, height/2, width/5, height/5);
+   text(title, usedWidth, height/2 + height/3);
+   usedWidth += width/movieObjects.length;
+ } 
 }
 
 void printVideoInfo() {
-   String videoSpeed = "";
-  if(playbackSpeed < 0) {
+  String videoSpeed = "";
+  if (playbackSpeed < 0) {
      videoSpeed = "rewinding";
   } else if (playbackSpeed > 1) {
       videoSpeed = "fastforwarding ";
   }
   text("TITLE: " + mov.filename + "\n SPEED: " + videoSpeed + nfc(playbackSpeed, 2) + "X" + "\n Pressure reading: " + pressureRating, 10, 30);
-    
-    if (volumeChanged + 2000 > System.currentTimeMillis()) {
-        text("Volume " + volume, 10, 70);
-    }
-    
-    text("print coords here, x: y: ", 10, 110);
-    
+  if (volumeChanged + 2000 > System.currentTimeMillis()) {
+    text("Volume " + volume, 10, 70);
+  }
+  text("print coords here, x: y: ", 10, 110);    
 }
 
 void initializePins() {
   for (int i = 0; i <= 53; i++)
-  arduino.pinMode(i, Arduino.INPUT);
+    arduino.pinMode(i, Arduino.INPUT);
 
   //IR Led  
   arduino.pinMode(IRLed, arduino.OUTPUT);  
 }
 
-void handleVolumeAndSkip() {
-  
+void handleVolumeAndSkip() {  
   // If over 5 seconds has passed from pressing threeWayIn button, set skipVideos false
-  if(skipVideos && skipVideosChanged + 5000 < System.currentTimeMillis()) {
+  if (skipVideos && skipVideosChanged + 5000 < System.currentTimeMillis()) {
      skipVideos = false; 
-  }
-  
+  }  
   boolean skipChangeAllowed = true;
   // to prevent user from holding down threeWayIn button
   if (skipVideosChanged + 250 > System.currentTimeMillis()) {
@@ -201,19 +176,17 @@ void handleVolumeAndSkip() {
      skipVideosChanged = System.currentTimeMillis();
   }
   else if (arduino.digitalRead(threeWayIn) == arduino.LOW) {
-    if(skipChangeAllowed) {
+    if (skipChangeAllowed) {
         skipVideos = true;
     }
     skipVideosChanged = System.currentTimeMillis();
-  }
-  
+  }  
    if (skipVideos) {
      handleSkip();
    } else {
       handlePause();
       handleVolume(); 
-   }
- 
+   } 
   if (arduino.digitalRead(threeWayIn) == arduino.LOW) {
         threeWayInPressed = System.currentTimeMillis();
   }
@@ -226,13 +199,11 @@ void handleSkip() {
   videoSelectScreen();
 }
 
-
-void handlePause() {
-  
+void handlePause() {  
   if (pressureRating >= 950 && pressed == false) {
        pressed = true;
        boolean saveMovPaused = movPaused;
-       if(timeWhenPressed + 500 > System.currentTimeMillis()) {
+       if (timeWhenPressed + 500 > System.currentTimeMillis()) {
             if(movPaused) {
                 movPaused = false;
             } else {
@@ -249,29 +220,23 @@ void handlePause() {
   }
   if (pressureRating <= 950 && pressed) {
       pressed = false;
-  }
-  
+  }  
   if (movPaused) {
      mov.pause();
   } else { 
      mov.play();
-  }
-   
+  }   
 }
-
-
 
 void handleVolume() {
   
    if (arduino.digitalRead(threeWayDown) == arduino.LOW) {
       volumeChanged = System.currentTimeMillis();
       if (volume+0.01 < 1) {
-          volume += 0.01;
-          
+          volume += 0.01;          
       } else {
          volume = 1; 
-      }
-      
+      }      
   }
   if (arduino.digitalRead(threeWayUp) == arduino.LOW) {
       volumeChanged = System.currentTimeMillis();
@@ -295,7 +260,6 @@ void drawVideoSpeedLine() {
         for (int j=0;j<pointList.size();j++) {
            TuioPoint end_point = pointList.get(j);
            line(start_point.getScreenX(width),start_point.getScreenY(height),end_point.getScreenX(width),start_point.getScreenY(height));
-           //start_point = end_point;
         }
       }
    } 
@@ -306,48 +270,25 @@ void addTuioObject(TuioObject tobj) {
   if (videoSelect) {
    selectVideo(tobj.getX());
    text("something", 0, 130);
-  }
-  else {
-   if (millis() - lastTuioEvent < 1000) {
-    //togglePause();
-   }
+  } else {   
    xBegin = tobj.getX();
    lastTuioEvent = millis();
    println("add obj "+tobj.getSymbolID()+" ("+tobj.getSessionID()+") "+tobj.getX()+" "+tobj.getY()+" "+tobj.getAngle());
   }
 }
 
-void selectVideo(float selection) {
- 
- int selectedMovie = (int)map(selection, 0, 1, 0, movieObjects.length); 
-   text("selected movie: " + selectedMovie, 10, 100);
- mov = new Movie(this, movieObjects[selectedMovie].filename);
- mov.loop();
- videoSelect = false;
- 
+void selectVideo(float selection) { 
+  int selectedMovie = (int)map(selection, 0, 1, 0, movieObjects.length); 
+  text("selected movie: " + selectedMovie, 10, 100);
+  mov = new Movie(this, movieObjects[selectedMovie].filename);
+  mov.loop();
+  videoSelect = false; 
 }
 
-void togglePause() {
- if (pausedState) {
-  mov.loop();
-  pausedState = false;
- } 
- else  {
-  mov.pause(); 
-  pausedState = true;
- }
-}
 
 // called when an object is moved
 void updateTuioObject (TuioObject tobj) {
-    
-    
-  
     float change = tobj.getX()-xBegin;
-  //  if (change < 0.2 ) {
-    //  println("Not rewinding");
- //       return;
-  //  }
     if (Math.abs(change) > 0.01) {
       if (tobj.getX()>xBegin) {
         playbackSpeed = map(change, 0.0, 0.5, 1, 3);
@@ -364,22 +305,14 @@ void updateTuioObject (TuioObject tobj) {
         }
       }
     }
-    //if (playbackSpeed == 0) {
-    //  playbackSpeed = 0.1;
-   // }
    text("speed: " + playbackSpeed, 10, 60);
-  
-  //println("set obj "+tobj.getSymbolID()+" ("+tobj.getSessionID()+") "+tobj.getX()+" "+tobj.getY());
 }
 
 // called when an object is removed from the scene
 void removeTuioObject(TuioObject tobj) {
-
     mov.volume(1);
-    playbackSpeed = 1;
-  
-  
-  println("del obj "+tobj.getSymbolID()+" ("+tobj.getSessionID()+")");
+    playbackSpeed = 1;  
+    println("del obj "+tobj.getSymbolID()+" ("+tobj.getSessionID()+")");
 }
 
 // NOTE! Cursors mainly for testing, obj-methods for actual use with IR-emitter
@@ -388,8 +321,6 @@ void removeTuioObject(TuioObject tobj) {
 void addTuioCursor(TuioCursor tcur) {
   
   toggleIRLed(arduino.analogRead(pressureSensor));
-  //xBegin = tcur.getX();
-  //mov.volume(0);
   println("add cur "+tcur.getCursorID()+" ("+tcur.getSessionID()+ ") " +tcur.getX()+" "+tcur.getY());
 }
 
@@ -397,30 +328,13 @@ void addTuioCursor(TuioCursor tcur) {
 void updateTuioCursor (TuioCursor tcur) {
   
   toggleIRLed(arduino.analogRead(pressureSensor));
-  /*Commented out for testing IRLed
-  float change = tcur.getX()-xBegin;
-  if (Math.abs(change) > 0.001) {
-    if (tcur.getX()>xBegin) {
-      playbackSpeed = map(change, 0.0, 0.5, 0.1, 3);
-      if (playbackSpeed > 3) {
-        playbackSpeed = 3;
-      }
-    } else if (tcur.getX()<xBegin) {
-      playbackSpeed = map((0+(tcur.getX()-xBegin)), 0.0, -0.5, -0.1, -3);  
-      if (playbackSpeed < -3) {    
-        playbackSpeed = -3;  
-      }
-    }
-  }*/
 
   println("set cur "+tcur.getCursorID()+" ("+tcur.getSessionID()+ ") " +tcur.getX()+" "+tcur.getY()
           +" "+tcur.getMotionSpeed()+" "+tcur.getMotionAccel());
 }
 
 // called when a cursor is removed from the scene
-void removeTuioCursor(TuioCursor tcur) { 
-  //playbackSpeed = 1;
-  //mov.volume(1);
+void removeTuioCursor(TuioCursor tcur) {
   arduino.digitalWrite(IRLed, arduino.LOW);
   println("del cur "+tcur.getCursorID()+" ("+tcur.getSessionID()+")" + "  " + tcur.getX() + " ");
 }
@@ -444,6 +358,5 @@ void removeTuioBlob(TuioBlob tblb) {
 
 // --------------------------------------------------------------
 // called at the end of each TUIO frame
-void refresh(TuioTime frameTime) { 
-  //println("frame #"+frameTime.getFrameID()+" ("+frameTime.getTotalMilliseconds()+")");
+void refresh(TuioTime frameTime) {  
 }
